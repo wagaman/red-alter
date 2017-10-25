@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaBlackListMapper">
+
+    <select id="getDataForExcel" resultType="com.bbd.dafei.common.modal.vo.RaBlackListVO">
+        select (@numIndex:=@numIndex+1) numIndex,t3.company,date_format(t3.joinDate,'%Y/%m/%d') as
+        joinDate,IFNULL(t3.reasons,'--') as joinReason,IFNULL(t3.industry,'--') as industry,IFNULL(t3.registerArea,'--')
+        as registerArea
+        from
+        (
+        select ifnull(t2.company,t1.company) company,t2.industry,CONCAT(IF(t1.city ='无','',t1.city),IF(t1.area ='无','',t1.area)) as
+        registerArea,t1.join_date as joinDate,(
+        SELECT GROUP_CONCAT(reason)
+        FROM ra_blacklist_reason
+        WHERE blacklist_id=t1.id
+        ) reasons
+        from ra_blacklist t1
+        left join ra_company t2
+        on t1.company_id = t2.id
+        where
+        t1.status = 0
+        <if test="province!=null  and province!=''">AND t1.province=#{province}</if>
+        <if test="city!=null and city!=''">AND t1.city=#{city}</if>
+        <if test="area!=null and area!=''">AND t1.area=#{area}</if>
+        <if test="industry!=null and industry!=''">AND t2.industry=#{industry}</if>
+        ) t3,(select @numIndex:=0 from dual) t4
+        order by t3.joinDate desc;
+    </select>
+    <select id="getDataForPersonExcel" resultType="com.bbd.dafei.common.modal.vo.RaBlackListFocusVO"
+            parameterType="java.lang.String">
+        select (@numIndex:=@numIndex+1) numIndex,t3.company,t3.industry,t3.riskLevel,t3.riskIndex,date_format(t3.joinDate,'%Y/%m/%d') as joinDate,t3.reasons
+        from
+        (
+        select ifnull(t2.company,t1.company) as company,t2.industry,t2.risk_level as riskLevel,t2.risk_index as riskIndex,t1.gmt_create as joinDate,(
+                                                                      SELECT GROUP_CONCAT(reason)
+                                                                      FROM   ra_blacklist_reason
+                                                                      WHERE  blacklist_id=t1.id
+                                                                  ) reasons
+        from ra_blacklist t1
+        left join ra_company t2
+        on t1.company_id = t2.id
+        where  t1.province = #{province} and t1.add_user = #{username} and t1.status=0
+        ) t3 ,(select @numIndex:=0 from dual) t4
+        order by t3.joinDate desc;
+    </select>
+
+
+    <select id="findByProvince" resultType="com.bbd.dafei.common.modal.vo.RaBlackListFocusVO">
+
+        SELECT *
+        FROM        ra_blacklist a
+        LEFT JOIN   ra_company b
+        ON a.company_id=b.id
+        WHERE a.province=#{province}
+              AND a.status=0
+
+    </select>
+
+
+    <select id="count" resultType="int">
+
+        SELECT count(*)
+        FROM ra_blacklist a , ra_company b
+        <include refid="whereSqlMyBacklist"></include>
+
+    </select>
+
+    <select id="query" resultType="com.bbd.dafei.common.modal.vo.RaBlackListVO">
+
+        SELECT a.id,
+        ifnull(b.company,a.company) as company,
+        b.id companyId,
+        DATE_FORMAT(a.join_date,'%Y-%m-%d') joinDate,
+        (
+        SELECT GROUP_CONCAT(reason)
+        FROM ra_blacklist_reason
+        WHERE blacklist_id=a.id
+        ) joinReason ,
+        b.industry,
+        b.risk_level,
+        b.risk_index,
+        b.rise,
+        CONCAT( a.city , IF(strcmp('无',a.area),a.area,'') ) registerArea
+
+        FROM ra_blacklist a , ra_company b
+        <include refid="whereSqlMyBacklist"></include>
+        ORDER BY ${order} ${descAsc}
+        <if test="start > -1">LIMIT ${start},${size}</if>
+
+    </select>
+
+    <select id="findLastBlackByCompanyId" resultType="com.bbd.dafei.common.dal.po.RaBlacklistPO">
+        select
+        <include refid="columns"/>
+        from ra_blacklist
+        where company_id=#{companyId}
+        and status=0
+        order by id desc
+        limit 0,1
+    </select>
+
+
+    <select id="findBlacklistById" resultType="com.bbd.dafei.common.dal.po.RaBlacklistPO">
+        select
+        <include refid="columns"/>
+        from ra_blacklist
+        where id=#{id}
+    </select>
+
+    <select id="findBlacklistsByIds" resultType="com.bbd.dafei.common.dal.po.RaBlacklistPO">
+        select
+        <include refid="columns"/>
+        from ra_blacklist
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findBlackReasonsByBlackId" resultType="java.lang.String">
+        select reason
+        from ra_blacklist_reason
+        where blacklist_id = #{blackId}
+        and `type` in (1,2)
+    </select>
+
+
+    <update id="cancelBlack">
+
+        UPDATE ra_blacklist
+        SET status = 1,
+        cancel_user = #{cancelUser}
+        <if test="cancelByUser == true">
+            ,join_type = 0
+        </if>
+        WHERE id = #{id};
+
+        INSERT INTO ra_blacklist_reason
+        ( blacklist_id, company_id , type , reason, gmt_create)
+        VALUES
+        <foreach collection="cancelReason" item="kv" close=";" separator=",">
+            ( #{id} , #{companyId}, #{kv.k} , #{kv.v},
+            <choose>
+                <when test="cancelDate != null">
+                    #{cancelDate}
+                </when>
+                <otherwise>
+                    now()
+                </otherwise>
+            </choose>
+            )
+        </foreach>
+
+
+    </update>
+
+    <select id="findBlackListByCompanyIds" resultType="java.lang.String">
+        select company_id from ra_blacklist where status = 0 and company_id in
+        <foreach collection="companyIds" item="companyId" open="(" separator="," close=")">
+            #{companyId}
+        </foreach>
+    </select>
+
+
+    <select id="inBlacklist" resultType="int">
+
+        SELECT count(*)
+        FROM   ra_blacklist
+        WHERE  company_id = #{companyId}
+               AND status = 0
+
+    </select>
+
+
+    <insert id="addBlacklist" useGeneratedKeys="true" keyProperty="id">
+
+        <selectKey keyProperty="id" resultType="int">
+            select LAST_INSERT_ID()
+        </selectKey>
+
+        INSERT INTO ra_blacklist
+        ( add_user , province , city , area , company_id ,status , company , join_date , join_type )
+        VALUES ( #{username}, #{province} , #{city}, #{area},#{companyId} ,0 , #{company}, ifnull(#{joinDate},CURRENT_TIMESTAMP), ${joinType});
+
+    </insert>
+
+
+    <update id="updateBlacklist">
+        update ra_blacklist
+        set add_user=#{username},
+        join_date = #{joinDate}
+        where id = #{id}
+    </update>
+
+    <insert id="addBlacklistReasons">
+
+        INSERT INTO ra_blacklist_reason
+        ( blacklist_id , company_id , type , reason, gmt_create)
+        VALUES
+        <foreach collection="reasons" separator="," item="kv" close=";">
+            (#{blacklistId} ,#{companyId} ,#{kv.k},#{kv.v},
+            <choose>
+                <when test="kv.k == 3 or kv.k == 4">
+                    #{gmtCreate}
+                </when>
+                <otherwise>now()</otherwise>
+            </choose>
+
+            )
+        </foreach>
+    </insert>
+
+    <sql id="columns">
+        id,add_user adduser,cancel_user canceluser,province,city,area,company_id companyid,company,status,status_update statusupdate,
+        cancel_look_over cancellookover,gmt_create gmtcreate,gmt_update gmtupdate,join_type jointype,join_date joindate
+    </sql>
+
+
+    <sql id="whereSqlMyBacklist">
+
+        WHERE a.company_id=b.id and b.is_black = 1
+        <if test="username!=null  and username!=''">AND a.add_user=#{username}</if>
+        <if test="industry!=null  and industry!=''">AND b.industry=#{industry}</if>
+        <if test="riskLevel!=null and riskLevel!=''">AND b.risk_level=#{riskLevel}</if>
+        <if test="status!=null">AND a.status=#{status}</if>
+        <if test="province!=null  and province!=''">AND a.province=#{province}</if>
+        <if test="city!=null and city!=''">AND a.city=#{city}</if>
+        <if test="area!=null and area!=''">AND a.area=#{area}</if>
+
+    </sql>
+
+
+    <sql id="whereSqlMyBacklistAndCancel">
+
+        WHERE ( a.add_user=#{username}
+        <if test="industry!=null  and industry!=''">AND b.industry=#{industry}</if>
+        <if test="riskLevel!=null and riskLevel!=''">AND b.risk_level=#{riskLevel}</if>
+        <if test="status!=null">AND a.status=#{status}</if>
+        <if test="province!=null  and province!=''">AND a.province=#{province}</if>
+        <if test="city!=null and city!=''">AND a.city=#{city}</if>
+        <if test="area!=null and area!=''">AND a.area=#{area}</if>
+        ) or (
+        a.add_user=#{username}
+        AND a.add_user != a.cancel_user
+        AND cancel_look_over = 0
+        AND a.status = 1
+        <if test="industry!=null  and industry!=''">AND b.industry=#{industry}</if>
+        )
+
+    </sql>
+
+
+    <select id="countAddAndCancel" resultType="int">
+
+        SELECT count(*)
+        FROM ra_blacklist a
+        LEFT JOIN ra_company b
+        ON a.company_id=b.id
+        <include refid="whereSqlMyBacklistAndCancel"></include>
+
+    </select>
+
+    <select id="queryAddAndCancel" resultType="com.bbd.dafei.common.modal.vo.RaBlackListVO">
+
+        SELECT a.id,
+        a.company,
+        b.id companyId,
+        DATE_FORMAT(a.join_date,'%Y-%m-%d') joinDate,
+        (
+        SELECT GROUP_CONCAT(n.reason)
+        FROM ra_blacklist_reason n
+        <![CDATA[
+                                WHERE n.blacklist_id=a.id and if(a.status , n.type > 2, n.type < 3)
+                          ]]>
+        ) reason ,
+
+        b.industry,
+        b.risk_level,
+        b.risk_index,
+        b.rise,
+        a.status,
+        CONCAT( a.city , IF(strcmp('无',a.area),a.area,'') ) registerArea
+
+        FROM ra_blacklist a
+        LEFT JOIN ra_company b ON a.company_id=b.id
+        <include refid="whereSqlMyBacklistAndCancel"></include>
+        ORDER BY a.status desc , ${order} ${descAsc}
+        <if test="start > -1">LIMIT ${start},${size}</if>
+
+    </select>
+
+
+    <update id="lookOverCancel">
+
+        UPDATE ra_blacklist
+        SET    cancel_look_over=1
+        WHERE  id=#{id}
+               AND add_user=#{addUser}
+
+    </update>
+
+
+    <select id="isexist" resultType="int">
+        SELECT count(1) FROM ra_blacklist WHERE company_id = #{companyId} and (( status = 0 and join_type != 0) or join_type = 0)
+    </select>
+
+
+    <select id="findDataByAddUserAndCompanyIdForPersonalCenter" resultType="int">
+        select count(*)
+        from ra_blacklist
+        where company_id = #{companyId}  and status = 0;
+    </select>
+
+    <select id="findBlackListByCompanyId" resultType="int">
+        select max(id)
+        from ra_blacklist
+        where company_id = #{companyId} AND status = 0;
+    </select>
+
+    <select id="getBlackListInfoByCompanyId" resultType="com.bbd.dafei.common.modal.vo.WrodBlackListInfoVO">
+        select t1.company,t2.industry,date_format(t1.gmt_create, '%Y-%m-%d') as joinDate,(SELECT GROUP_CONCAT(reason) FROM   ra_blacklist_reason WHERE  blacklist_id=t1.id) reasons
+        from ra_blacklist t1
+        left join ra_company t2
+        on t1.company_id = t2.id
+        where t1.company_id =#{companyId} and
+        t1.status = 0
+    </select>
+
+
+    <select id="queryAndReasonPage" resultType="com.bbd.dafei.common.modal.vo.BlacklistVO">
+        <include refid="queryBlacklist"/>
+
+        <if test="map.company!='' and map.company!=null">WHERE a.company like concat('%',#{map.company},'%')</if>
+
+        ORDER BY ${map.order} ${map.ascDesc}
+
+    </select>
+
+    <select id="queryAndReasonByIds" resultType="com.bbd.dafei.common.modal.vo.BlacklistVO">
+        <include refid="queryBlacklist"/>
+        WHERE a.id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY ${order} ${ascDesc}
+    </select>
+
+    <delete id="deleteBlacklistById">
+        delete from ra_blacklist where id =#{id}
+    </delete>
+
+    <delete id="deleteBlacklistByIds">
+        delete from ra_blacklist where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteBlackReasonByBlackId">
+        delete from ra_blacklist_reason where blacklist_id = #{blackId}
+    </delete>
+
+    <delete id="deleteBlackReasonsByBlackIds">
+        delete from ra_blacklist_reason where blacklist_id
+        in
+        <foreach collection="blackIds" item="blackId" open="(" separator="," close=")">
+            #{blackId}
+        </foreach>
+    </delete>
+
+    <select id="findAllBlackList" resultType="com.bbd.dafei.common.modal.vo.BlacklistVO">
+        <include refid="queryBlacklist"/>
+    </select>
+
+    <select id="findAllManagedBlackList" resultType="com.bbd.dafei.common.modal.vo.BlacklistVO">
+        <include refid="queryBlacklist"/>
+        where a.join_type != 0
+    </select>
+
+    <!-- 新增黑名单 -->
+    <sql id="findBlacklistVerifyNew">
+        select bw.id as companyid,bw.company as companyname,c.industry,c.province,date_format(bw.gmt_create, '%Y%m%d') as dataversion,
+        '1' as type,'新增黑名单' as typename,b.id blackid,date_format(b.gmt_create, '%Y%m%d') blackCreateDate,
+        b.add_user addsource,b.join_date joindate,
+        a.reason joinReason,d.reason cancelReason,d.cancelDate cancelDate
+        from ra_black_white bw
+        left join ra_blacklist b on bw.id = b.company_id
+        left join ra_company c on c.id = bw.id
+        LEFT JOIN (
+                SELECT GROUP_CONCAT(reason) reason , blacklist_id
+                FROM ra_blacklist_reason
+                WHERE type in (1,2)
+                GROUP BY blacklist_id
+                ) a on a.blacklist_id=b.id
+        LEFT JOIN (
+                SELECT GROUP_CONCAT(reason) reason , blacklist_id ,MAX(gmt_create) cancelDate
+                FROM ra_blacklist_reason
+                WHERE type in (3,4)
+                GROUP BY blacklist_id
+                ) d on d.blacklist_id=b.id
+        where bw.is_black = 1 and b.status=0 and b.join_type  = 1
+        and b.gmt_create &gt;= bw.gmt_create
+    </sql>
+
+    <!-- 已移除->本次为黑 -->
+    <sql id="findBlackListVerifyBlack">
+        select bw.id as companyid,bw.company as companyname,c.industry,c.province,date_format(bw.gmt_create, '%Y%m%d') as dataversion,
+        '2' as type,'已移除->本次为黑' as typename,b.id blackid,date_format(b.gmt_create, '%Y%m%d') blackCreateDate,
+        b.add_user addsource,b.join_date joindate,
+        a.reason joinReason,d.reason cancelReason,d.cancelDate cancelDate
+        from ra_black_white bw
+        left join (select * from ra_blacklist b1 where not EXISTS(select * from ra_blacklist b2 where b1.company_id =
+        b2.company_id and b2.status = 0)) b on bw.id = b.company_id
+        left join ra_company c on c.id = bw.id
+        LEFT JOIN (
+        SELECT GROUP_CONCAT(reason) reason , blacklist_id
+        FROM ra_blacklist_reason
+        WHERE type in (1,2)
+        GROUP BY blacklist_id
+        ) a on a.blacklist_id=b.id
+        LEFT JOIN (
+        SELECT GROUP_CONCAT(reason) reason , blacklist_id ,MAX(gmt_create) cancelDate
+        FROM ra_blacklist_reason
+        WHERE type in (3,4)
+        GROUP BY blacklist_id
+        ) d on d.blacklist_id=b.id
+        where bw.is_black = 1 and b.status=1 and b.gmt_create &lt; bw.gmt_create
+        and not EXISTS(select * from ra_blacklist b1 where b1.company_id = b.company_id and b1.status = 0)
+    </sql>
+
+    <!-- 已加入->本次为灰 -->
+    <sql id="findBlackListVerifyWhite">
+        select bw.id as companyid,bw.company as companyname,c.industry,c.province,date_format(bw.gmt_create, '%Y%m%d') as dataversion,
+        '3' as type,'已加入->本次为灰' as typename,b.id blackid,date_format(b.gmt_create, '%Y%m%d') blackCreateDate,
+        b.add_user addsource,b.join_date joindate,
+        a.reason joinReason,d.reason cancelReason,d.cancelDate cancelDate
+        from ra_black_white bw
+        left join ra_blacklist b on bw.id = b.company_id
+        left join ra_company c on c.id = bw.id
+        LEFT JOIN (
+        SELECT GROUP_CONCAT(reason) reason , blacklist_id
+        FROM ra_blacklist_reason
+        WHERE type in (1,2)
+        GROUP BY blacklist_id
+        ) a on a.blacklist_id=b.id
+        LEFT JOIN (
+        SELECT GROUP_CONCAT(reason) reason , blacklist_id ,MAX(gmt_create) cancelDate
+        FROM ra_blacklist_reason
+        WHERE type in (3,4)
+        GROUP BY blacklist_id
+        ) d on d.blacklist_id=b.id
+        where bw.is_black = 0 and b.status=0 and b.gmt_create &lt; bw.gmt_create
+    </sql>
+
+    <select id="findBlackListVerifyPage" resultType="com.bbd.dafei.common.modal.vo.BlacklistVerifyVO">
+        select * from (
+        <include refid="findBlacklistVerifyNew"/>
+        union all
+        <include refid="findBlackListVerifyBlack"/>
+        union all
+        <include refid="findBlackListVerifyWhite"/>
+        ) q
+        <where>
+            <if test="type!=null and type!=''">
+                and q.type = #{type}
+            </if>
+        </where>
+        order by q.dataversion desc
+    </select>
+
+    <sql id="queryBlacklist">
+        SELECT a.id,
+        a.company_id,
+        ifnull(b.company,a.company) as company,
+        b.industry,
+        a.province,
+        a.status,
+        c.reason joinReason,
+        a.add_user joinSrouce,
+        a.join_date,
+        a.gmt_create,
+        d.reason cancelReason,
+        d.cancelDate cancelDate,
+        a.join_type
+
+        FROM ra_blacklist a
+        LEFT JOIN ra_company b
+        ON b.id=a.company_id
+        LEFT JOIN (
+        SELECT GROUP_CONCAT(reason) reason , blacklist_id
+        FROM ra_blacklist_reason
+        WHERE type in (1,2)
+        GROUP BY blacklist_id
+        ) c on c.blacklist_id=a.id
+        LEFT JOIN (
+        SELECT GROUP_CONCAT(reason) reason , blacklist_id ,MAX(gmt_create) cancelDate
+        FROM ra_blacklist_reason
+        WHERE type in (3,4)
+        GROUP BY blacklist_id
+        ) d on d.blacklist_id=a.id
+    </sql>
+
+    <select id="findAll" resultType="com.bbd.dafei.common.dal.po.RaBlacklistPO">
+        SELECT
+          <include refid="columns"/>
+        FROM
+           ra_blacklist
+        WHERE
+           status=0;
+    </select>
+
+    <update id="updateProvinceCityArea">
+        update
+          ra_blacklist a
+        inner join
+          ra_company b
+        on
+          a.company_id=b.id
+        set
+          a.province=b.province,a.city=b.city,a.area = b.area
+    </update>
+
+</mapper>

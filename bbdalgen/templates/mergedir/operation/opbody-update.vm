@@ -1,0 +1,5 @@
+#if((${table.getTableConfig().bConfidentiality()} == true)||(${table.getTableConfig().bIntegrity()} == true))
+#parse ("operation/opbody-update-new.vm")
+#else
+#parse ("operation/opbody-update-old.vm")
+#end	

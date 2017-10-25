@@ -1,0 +1,102 @@
+{
+#if (${operation.paramType} == "object")
+    	if (${operation.param.name} == null) {
+    		throw new IllegalArgumentException("Can't insert a null data object into db.");
+    	}
+         ##//���mapping��� 
+        ##String oriSql = "${operation.mappedStatementSql}"; 
+#if(${table.getTableConfig().bConfidentiality()} == true)
+        //�����Ա�������
+        getConfResultForInsert(${operation.param.name});
+#end
+#if(${table.getTableConfig().bIntegrity()} == true)
+	    //�����Ա���
+		getIntegResultForInsert(${operation.param.name});
+#end    
+ 
+	    getSqlMapClientTemplate().insert("${operation.mappedStatementId}", ${operation.param.name});
+
+        return ${operation.param.name}.${table.iwPkColumn.getterName}();
+#else
+## Not supported yet.
+#parse ("operation/not-support.vm")
+#end
+}   
+#if(${table.getTableConfig().bIntegrity()} == true)
+       /**
+       * ��������������Ա�������
+       * @param student
+       */
+     private void getIntegResultForInsert(${table.getQualifiedDOClassName()} ${operation.param.name}) {
+
+		//Ҫ����ժҪ�ֶε�����
+		String integritymes = ${operation.param.name}.get${finalI}();
+		if (integritymes == null || integritymes.length() == 0) {
+		   logger.warn("Ҫ����ժҪ�ֶ���ֵΪ�գ���ȷ��");
+		   throw new IllegalArgumentException("Ҫ����ժҪ�ֶ���ֵΪ�գ���ȷ��");
+		}
+		
+	    //kmi��ȡ��Կ 
+	    KmiResult keyresult2 = methodUtils.getKmiResultInteg(abstractKeyName,appName,0);
+		//����ֵת��Ϊbyte
+		byte[] confBytes = integritymes.getBytes();
+		//��kmi��ȡ�õ���Կ��Base64�����ģ��ʽ���
+		byte[] keyBytes = Base64.decode(keyresult2.getKeyData());
+		
+		byte[] cipherBytes = null;
+		String abstractValue = null;
+		//����
+		try {
+			cipherBytes = CalculateMacUtil.calMac(confBytes, keyBytes, "HmacSHA256");
+			//��ժҪ�ֶν���Base64����
+		    abstractValue = Base64.encode(cipherBytes);
+		} catch (GeneralSecurityException e) {
+			logger.error("���ܳ����쳣");
+			throw new RuntimeException("��������ʱ�����Լ��ܳ���",e);
+		}
+		
+        StringBuffer sb = new StringBuffer();
+		//�洢�ļ����ֶ�Ϊ����@version
+		String abstractFinalValue = sb.append(abstractValue).append("@").append(abstractKeyName).append("#").append(keyresult2.getVersion()).toString();
+		${operation.param.name}.set$!{method2_getInteg}(abstractFinalValue);
+       }
+#end
+
+
+#if(${table.getTableConfig().bConfidentiality()} == true)
+      /**
+       * ��������Ļ����Ա�������
+       * @param student
+       */
+      private void getConfResultForInsert(${table.getQualifiedDOClassName()} ${operation.param.name}) {
+
+		//���Ҫ�����ֶε���ֵ
+	    String confidentialitymes = ${operation.param.name}.get${finalRet}();
+	    if (confidentialitymes == null || confidentialitymes.length() == 0) {
+		   logger.warn("Ҫ�����ֶ���ֵΪ�գ���ȷ��");
+		   throw new IllegalArgumentException("Ҫ�����ֶ���ֵΪ�գ���ȷ��");
+		}
+		//kmi��ȡ��Կ 
+	    KmiResult keyResult = methodUtils.getKmiResultConf(encodeKeyName,appName,0);
+		//����ֵת��Ϊbyte
+		byte[] confBytes = confidentialitymes.getBytes();
+		//��kmi��ȡ�õ���Կ��Base64�����ģ��ʽ���
+		byte[] keyBytes = Base64.decode(keyResult.getKeyData());
+		
+		byte[] cipherBytes = null;
+		String encodedValue = null;
+		//����
+		try {
+			cipherBytes = SymmtricCryptoUtil.symmtricCrypto(confBytes, keyBytes, "AES", Cipher.ENCRYPT_MODE);
+			//�Լ������ݽ���Base64����
+		    encodedValue = Base64.encode(cipherBytes);
+		} catch (GeneralSecurityException e) {
+			logger.error("���ܳ����쳣");
+			throw new RuntimeException("��������ʱ�����Լ��ܳ���",e);
+		}
+		StringBuffer sb = new StringBuffer();
+		//�洢�ļ����ֶ�Ϊ����@version
+		String finalValue = sb.append(encodedValue).append("@").append(encodeKeyName).append("#").append(keyResult.getVersion()).toString();				
+		${operation.param.name}.set$!{method_getConf}(finalValue);
+	   }
+#end

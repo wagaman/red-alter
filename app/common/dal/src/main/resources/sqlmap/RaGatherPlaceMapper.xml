@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaGagherPlaceMapper" >
+
+    <!-- 根据公司id查询关联聚集地 -->
+    <select id="findGatherPlaceByCompanyId" resultType="java.lang.String">
+        select gather_place from ra_gather_place where id = #{companyId}
+    </select>
+
+</mapper>

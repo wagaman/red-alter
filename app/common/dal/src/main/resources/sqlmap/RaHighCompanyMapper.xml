@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaHighCompanyMapper">
+
+    <select id="findByProvince" resultType="com.bbd.dafei.common.modal.vo.RaIndexCompanyVO">
+        select (@numIndex:=@numIndex+1) numIndex,t1.company,t1.risk_index AS
+        riskindex,date_format(t1.join_date,'%Y-%m-%d') AS joindate,t1.industry,t1.register_area AS registerArea
+        from ra_high_company t1,(select @numIndex:=0 from dual) t2
+        <where>
+            <if test="province!=null and province!='' ">
+                AND t1.province=#{province}
+            </if>
+            <if test="city!=null and city!='' ">
+                AND t1.city=#{city}
+            </if>
+            <if test="area!=null and area!='' ">
+                AND t1.area=#{area}
+            </if>
+            <if test="industry!=null and industry!='' ">
+                AND t1.industry=#{industry}
+            </if>
+            <if test="isNew!=null and isNew!='' ">
+                AND t1.is_new=1
+            </if>
+        </where>
+        order by t1.risk_index desc;
+    </select>
+
+    <select id="count" resultType="int">
+        SELECT count(*)
+        FROM ra_high_company
+        <include refid="whereSql"></include>
+    </select>
+
+
+    <select id="query" resultType="com.bbd.dafei.common.modal.vo.RaIndexCompanyVO">
+        SELECT *
+        FROM ra_high_company
+        <include refid="whereSql"></include>
+        ORDER BY ${order} ${descAsc}
+        <include refid="limitSql"></include>
+    </select>
+
+    <select id="highCompanyTop" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT
+        <if test="city == null">city AS region,</if>
+        <if test="city != null">area AS region,</if>
+        COUNT(*) AS highCompany,
+        ROUND(count(*) / (
+        SELECT count(*)
+        FROM ra_high_company
+        WHERE province = #{province}
+        <if test="city != null">
+            and city = #{city}
+        </if>
+        )
+        ,2) AS proportion
+        FROM ra_high_company c
+
+        WHERE c.province = #{province}
+        <if test="city != null ">
+            and c.city = #{city}
+        </if>
+
+        GROUP BY
+        <choose>
+            <when test="city != null">
+                c.area
+            </when>
+            <otherwise>
+                c.city
+            </otherwise>
+        </choose>
+
+        ORDER BY highCompany desc
+        LIMIT 4
+
+    </select>
+
+    <select id="industryHighCompanyTop" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT
+        <if test="city == null">city AS region,</if>
+        <if test="city != null">area AS region,</if>
+        COUNT(*) AS highCompany,
+        ROUND(count(*) / (
+        SELECT count(*)
+        FROM ra_high_company
+        WHERE province = #{province}
+        <if test="industry != null and industry != ''">
+            AND industry = #{industry}
+        </if>
+        <if test="city != null and city != ''">
+            and city = #{city}
+        </if>
+        )
+        ,2) AS proportion
+        FROM ra_high_company c
+
+        WHERE c.province = #{province}
+        <if test="industry != null and industry != ''">
+            AND industry = #{industry}
+        </if>
+        <if test="city != null and city != ''">
+            AND c.city=#{city}
+        </if>
+
+        GROUP BY
+        <choose>
+            <when test="city != null">
+                c.area
+            </when>
+            <otherwise>
+                c.city
+            </otherwise>
+        </choose>
+
+        ORDER BY highCompany desc
+        LIMIT 4
+
+    </select>
+
+    <sql id="whereSql">
+
+        <where>
+
+            <if test="province!=null and province!='' ">
+                AND province=#{province}
+            </if>
+
+            <if test="city!=null and city!='' ">
+                AND city=#{city}
+            </if>
+
+            <if test="area!=null and area!='' ">
+                AND area=#{area}
+            </if>
+
+            <if test="industry!=null and industry!='' ">
+                AND industry=#{industry}
+            </if>
+
+            <if test="isNew!=null and isNew!='' ">
+                AND is_new=1
+            </if>
+
+        </where>
+
+    </sql>
+
+
+    <sql id="limitSql">
+
+        <if test="start != null">
+            LIMIT #{start},#{size}
+        </if>
+
+    </sql>
+
+    <insert id="addHighCompany">
+        INSERT INTO ra_high_company(     id ,      province ,     city ,     area , company_id,     company ,     risk_index,     rise ,is_new,join_date                    ,  industry,             register_area)
+                            VALUES (#{po.id}, #{po.province},#{po.city},#{po.area},   #{po.id},#{po.company},#{po.riskIndex},#{po.rise},0     ,DATE_FORMAT(NOW(),'%Y%m%d'),#{po.industry},
+                <choose>
+                    <when test="po.city != null and po.city != '' and po.city != '无'.toString()">
+                        <choose>
+                            <when test="po.area != null and po.area != '' and po.area != '无'.toString()">
+                                CONCAT(#{po.city},#{po.area})
+                            </when>
+                            <otherwise>
+                                #{po.city}
+                            </otherwise>
+                        </choose>
+                    </when>
+                    <otherwise>
+                        '无'
+                    </otherwise>
+                </choose>
+        )
+                            ON DUPLICATE KEY UPDATE id=#{po.id}
+    </insert>
+
+    <insert id="addHighCompanys">
+        INSERT IGNORE INTO ra_high_company( id , province , city , area , company_id, company , risk_index, rise
+        ,is_new,join_date , industry, register_area)
+        VALUES
+        <foreach collection="pos" item="po" separator=",">
+            (#{po.id}, #{po.province},#{po.city},#{po.area}, #{po.id},#{po.company},#{po.riskIndex},#{po.rise},0
+            ,DATE_FORMAT(NOW(),'%Y%m%d'),#{po.industry},
+            <choose>
+                <when test="po.city != null and po.city != '' and po.city != '无'.toString()">
+                    <choose>
+                        <when test="po.area != null and po.area != '' and po.area != '无'.toString()">
+                            CONCAT(#{po.city},#{po.area})
+                        </when>
+                        <otherwise>
+                            #{po.city}
+                        </otherwise>
+                    </choose>
+                </when>
+                <otherwise>
+                    null
+                </otherwise>
+            </choose>
+
+             )
+        </foreach>
+    </insert>
+
+
+    <delete id="deleteByCompanyId">
+
+        DELETE FROM ra_high_company WHERE id = #{companyId}
+
+    </delete>
+
+</mapper>

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaBlackListFocusMapper">
+
+    <resultMap id="raBlackListFocusPO" type="com.bbd.dafei.common.dal.po.RaBlackListFocusPO"></resultMap>
+    <resultMap id="typeReasonPO" type="com.bbd.dafei.common.dal.po.TypeReasonPO"></resultMap>
+
+    <select id="findByUsernameForExport" resultType="com.bbd.dafei.common.modal.vo.RaBlackListFocusVO"
+            parameterType="java.lang.String">
+        select (@numIndex:=@numIndex+1) numIndex,t3.company_name as company,t3.industry,t3.riskLevel,t3.riskIndex,date_format(t3.joinDate,'%Y/%m/%d') as joinDate,t3.reasons
+        from
+        (
+            select t1.company_name,t2.industry,t2.risk_level as riskLevel,t2.risk_index as riskIndex,t1.gmt_create as joinDate,(
+                                                                      SELECT GROUP_CONCAT(reason)
+                                                                      FROM   ra_focus_reason
+                                                                      WHERE  focus_id=t1.id and company_id = t1.company_id
+                                                                  ) reasons
+            from ra_my_focus t1
+            left join ra_company t2
+            on t1.company_id = t2.id
+            where  t1.username = #{username} and t1.status = 0
+          ) t3 ,(select @numIndex:=0 from dual) t4
+          order by t3.joinDate desc;
+    </select>
+
+
+    <select id="countFocusByUsername" resultType="int">
+
+        SELECT count(*)
+        FROM   ra_my_focus
+        WHERE  username = #{username}
+               AND status = 0
+
+    </select>
+
+
+    <select id="countBlackByUserId" resultType="int">
+
+        SELECT count(*)
+        FROM   ra_blacklist
+        WHERE  add_user = #{username}
+               AND  status = 0
+
+    </select>
+
+
+    <select id="queryRiskChange" resultType="com.bbd.dafei.common.modal.vo.RaBlackListFocusVO">
+
+        SELECT  c.company,
+                c.company_detail,
+                c.rise,
+                c.industry,
+                c.risk_index,
+                c.risk_level,
+                bf.id,
+                bf.company_id
+        FROM    ra_my_focus bf
+        LEFT JOIN ra_company c
+        ON      c.id=bf.company_id
+        WHERE   bf.username = #{username}
+                AND bf.status = 0
+                AND bf.look_over = 0
+                AND c.risk_rise = 1
+        ORDER BY c.risk_index desc
+        <if test="page.start > -1">
+            LIMIT #{page.start},#{page.pageSize}
+        </if>
+
+    </select>
+
+    <select id="countRiskChange" resultType="int">
+
+        SELECT COUNT(*)
+        FROM   ra_my_focus bf
+        LEFT JOIN ra_company c
+                  ON c.id=bf.company_id
+        WHERE bf.username=#{username}
+              AND bf.status=0
+              AND bf.look_over=0
+              AND c.risk_rise = 1
+
+    </select>
+
+    <select id="findFocusNumByCompanyIdAndProvince" resultType="java.lang.Integer">
+        select count(*) num from ra_my_focus f
+        left join ra_user u on u.username = f.username
+        where f.company_id = #{companyId} and u.province = #{province} and f.status = 0
+    </select>
+
+    <select id="findLastedFocusByCompanyIdAndUserName" resultType="com.bbd.dafei.common.dal.po.RaMyFocusPO">
+        select
+        <include refid="columns"/>
+        from ra_my_focus f
+        where f.company_id = #{companyId}
+        and f.username = #{userName}
+        and f.status = 0
+        order by id desc
+        limit 0,1
+    </select>
+
+    <insert id="insertRaBlackListFocus">
+        insert into ra_blacklist_focus (username,company_id,company_name,`type`,reasons,mark)
+        values (#{userName},#{companyId},#{companyName},#{type},#{reasons,jdbcType=VARCHAR},#{mark,jdbcType=VARCHAR})
+    </insert>
+
+    <select id="findRaBlackListFocusById" resultMap="raBlackListFocusPO">
+        select b.id,b.username,b.company_id companyid,b.company_name companyname,b.type,b.reasons,b.mark,b.look_over lookover,
+        b.gmt_create gmtcreate,b.gmt_update gmtupdate
+        from ra_blacklist_focus b where b.id = #{id}
+    </select>
+
+    <update id="updateLookOver">
+
+        UPDATE ra_my_focus
+        SET look_over=#{lookOver}
+        WHERE status = 0
+        <if test="id != null">AND id=#{id}</if>
+
+    </update>
+
+
+    <select id="countMyFocus" resultType="int">
+
+        SELECT count(*)
+        FROM ra_my_focus a
+        LEFT JOIN ra_company b
+        ON a.company_id=b.id
+        <include refid="whereSqlMyFocus"></include>
+
+    </select>
+
+    <select id="queryMyFocus" resultType="com.bbd.dafei.common.modal.vo.RaBlackListFocusVO">
+
+        SELECT  a.id,
+                a.company_name company,
+                DATE_FORMAT(a.gmt_create,'%Y-%m-%d') joinDate,
+                if( a.status=1,
+                    (
+                        SELECT GROUP_CONCAT(reason)
+                        FROM ra_focus_reason
+                        WHERE focus_id=a.id AND type in (3,4)
+                    ),
+                    (
+                        SELECT GROUP_CONCAT(reason)
+                        FROM ra_focus_reason
+                        WHERE focus_id=a.id AND type in (1,2)
+                    )
+                 )
+                reasons,
+                b.industry,
+                b.risk_level,
+                b.risk_index,
+                a.company_id,
+                a.status
+
+        FROM ra_my_focus a
+
+        LEFT JOIN ra_company b
+
+        ON a.company_id=b.id
+        <include refid="whereSqlMyFocus"></include>
+        ORDER BY a.status desc , ${order} ${descAsc}
+        <if test="page.start > -1">LIMIT #{page.start},#{page.pageSize}</if>
+
+    </select>
+
+
+    <sql id="whereSqlMyFocus">
+
+        WHERE   a.username = #{username}
+                <if test="industry!=null  and industry!=''">AND b.industry=#{industry}</if>
+                <if test="riskLevel!=null and riskLevel!=''">AND b.risk_level=#{riskLevel}</if>
+                AND
+                (
+                        ( status = 0 )
+                        OR
+                        ( status = 1 AND black_change_look = 0)
+                )
+    </sql>
+
+
+    <update id="cancelFocus">
+
+        UPDATE ra_my_focus
+        SET status=1 , black_change_look=#{blackChangeLook}
+        WHERE id=#{id}
+
+    </update>
+
+
+
+    <select id="queryFocusByCompanyId" resultType="int">
+
+        SELECT id
+        FROM   ra_my_focus
+        WHERE  status=0
+               AND company_id=#{companyId}
+
+    </select>
+
+
+    <select id="isFocusByUser" resultType="int">
+        SELECT COUNT(*)
+        FROM   ra_my_focus
+        WHERE  username = #{username}
+               AND company_id = #{companyId}
+               AND status = 0
+    </select>
+
+
+    <insert id="addFocus" useGeneratedKeys="true" keyProperty="id">
+        <selectKey keyProperty="id" resultType="int">
+            select LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO ra_my_focus
+        ( username , company_id ,status , company_name )
+        VALUES ( #{username},#{companyId} ,0 , #{company} );
+
+    </insert>
+
+    <insert id="addFocusReasons">
+        INSERT INTO ra_focus_reason
+        ( focus_id , company_id , type , reason )
+        VALUES
+        <foreach collection="reasons" separator="," item="kv" close=";">
+            (#{focusId},#{companyId},#{kv.k},#{kv.v})
+        </foreach>
+    </insert>
+
+    <sql id="columns">
+        id,username,company_id companyid,company_name companyname,look_over lookover,status,gmt_create gmtcreate,gmt_update gmtupdate
+    </sql>
+
+
+    <select id="queryBlackWhite" resultType="com.bbd.dafei.common.modal.dto.BlackWhiteDTO" >
+        SELECT * FROM ra_black_white limit ${start} , ${size}
+    </select>
+
+
+    <select id="countBlackWhite" resultType="int" >
+        SELECT count(1) FROM ra_black_white
+    </select>
+
+
+
+    <delete id="deleteHighCompanyByBlacklist" >
+
+        DELETE FROM ra_high_company
+               WHERE id in (
+                  SELECT company_id
+                  FROM   ra_blacklist b
+                  WHERE  b.status=0
+               )
+
+    </delete>
+
+
+    <update id="lookBlackChangeCancelFoucs" >
+        update ra_my_focus set black_change_look=1 where id=#{id}
+    </update>
+
+    <update id="blacklistCancelFocus" >
+        update ra_my_focus
+        set    black_change_look=0,status=1
+        where  status=0
+               and company_id in (
+                                 SELECT company_id from ra_blacklist where status=0
+               )
+    </update>
+
+
+</mapper>

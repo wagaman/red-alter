@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaProblemPlatformMapper" >
+
+    <resultMap id="raProblemPlatformDTO" type="com.bbd.dafei.common.modal.dto.RaProblemPlatformDTO"></resultMap>
+
+    <!-- 根据平台名称查询问题平台信息 -->
+    <select id="findProblemPlatformByName" resultMap="raProblemPlatformDTO">
+        select <include refid="columns"/>
+        from ra_problem_platform where `name` = #{name}
+    </select>
+
+    <!-- 根据平台名称批量查询问题平台信息 -->
+    <select id="findProblemPlatformsByNames" resultMap="raProblemPlatformDTO">
+        select <include refid="columns"/>
+        from ra_problem_platform
+        where `name` in
+        <foreach collection="names" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+
+    <sql id="columns">
+        id, `name`, problem_time problemtime, online_time onlinetime, registered_fund registeredfund, area, event_type eventtype,
+        gmt_create gmtcreate, gmt_update gmtupdate
+    </sql>
+</mapper>

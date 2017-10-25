@@ -1,0 +1,13 @@
+*.iml
+target
+.idea
+.settings
+.project
+*/classess/*
+*.class
+*.war
+*.ear
+
+app/web/src/main/webapp/WEB-INF/lib/*
+app/web/src/main/webapp/META-INF/
+app/web/src/main/webapp/WEB-INF/lib/

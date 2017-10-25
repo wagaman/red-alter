@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>com.bbd.dafei</groupId>
+        <artifactId>ra-two</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.bbd.dafei</groupId>
+    <artifactId>ra-two-manage</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <name>BBD ra-two-manage</name>
+    <description>ra-two is built by klrf web</description>
+    <url>http://www.bbdservice.com/</url>
+
+    <packaging>war</packaging>
+
+    <dependencies>
+
+        <!-- project depends -->
+        <dependency>
+            <groupId>com.bbd.dafei</groupId>
+            <artifactId>ra-two-biz-service-impl</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.bbd.dafei</groupId>
+            <artifactId>ra-two-biz-shared</artifactId>
+        </dependency>
+
+
+        <!-- log -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.logback-extensions</groupId>
+            <artifactId>logback-ext-spring</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+        </dependency>
+        <!-- log end -->
+
+
+        <dependency>
+            <groupId>org.hibernate.javax.persistence</groupId>
+            <artifactId>hibernate-jpa-2.1-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jpa</artifactId>
+        </dependency>
+
+        <!-- spring mvc -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>jstl</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>taglibs</groupId>
+            <artifactId>standard</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+        </dependency>
+
+        <!-- swagger2 -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+        </dependency>
+
+        <!--pdf-->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.xhtmlrenderer</groupId>
+            <artifactId>flying-saucer-pdf</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.bbd.higgs</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.lowagie</groupId>
+            <artifactId>itext-rtf</artifactId>
+        </dependency>
+    </dependencies>
+
+
+    <!-- 打包配置信息 -->
+    <profiles>
+        <!--开发环境 -->
+        <profile>
+            <id>dev</id>
+            <!-- 默认 -->
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <filters>
+                    <filter>src/main/resources/config/dev.properties</filter>
+                </filters>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>false</filtering>
+                        <excludes>
+                            <exclude>config/online.properties</exclude>
+                            <exclude>config/test.properties</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+
+        <!--测试环境 -->
+        <profile>
+            <id>test</id>
+            <!-- 默认 -->
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <filters>
+                    <filter>src/main/resources/config/test.properties</filter>
+                </filters>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>false</filtering>
+                        <excludes>
+                            <exclude>config/online.properties</exclude>
+                            <exclude>config/dev.properties</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+
+        <!--上线环境 -->
+        <profile>
+            <id>online</id>
+            <!-- 默认 -->
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <filters>
+                    <filter>src/main/resources/config/online.properties</filter>
+                </filters>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>false</filtering>
+                        <excludes>
+                            <exclude>config/dev.properties</exclude>
+                            <exclude>config/test.properties</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+
+
+    <!--<build>-->
+    <!--<plugins>-->
+    <!--<plugin>-->
+    <!--<groupId>org.apache.maven.plugins</groupId>-->
+    <!--<artifactId>maven-war-plugin</artifactId>-->
+    <!--<configuration>-->
+    <!--<useCache>false</useCache>-->
+    <!--&lt;!&ndash; 排除  &ndash;&gt;-->
+    <!--<packagingExcludes>-->
+    <!--WEB-INF/lib/log4j-1.2.16.jar-->
+    <!--</packagingExcludes>-->
+    <!--<archive>-->
+    <!--<addMavenDescriptor>true</addMavenDescriptor>-->
+    <!--</archive>-->
+    <!--</configuration>-->
+    <!--</plugin>-->
+    <!--</plugins>-->
+    <!--</build>-->
+
+
+</project>

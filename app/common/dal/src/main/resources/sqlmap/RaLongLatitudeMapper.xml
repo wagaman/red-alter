@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaLongLatitudeMapper" >
+
+    <select id="query" resultType="com.bbd.dafei.common.dal.po.RaLongiLatitudePO" >
+
+        SELECT *
+        FROM   ra_longitude_latitude
+        <where>
+            <if test="province!=null and province!=''"> province = #{province} </if>
+            <if test="city!=null and city!=''">AND city = #{city} </if>
+            <if test="area!=null and area!=''">AND area = #{area} </if>
+        </where>
+
+    </select>
+
+
+
+
+
+
+</mapper>

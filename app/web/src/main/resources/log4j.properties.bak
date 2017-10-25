@@ -1,0 +1,116 @@
+# Root logger option
+log4j.rootLogger=INFO, stdout, file
+
+# Redirect log messages to console
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target=System.out
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+
+# Redirect log messages to a log file
+log4j.appender.file=org.apache.log4j.RollingFileAppender
+
+# Outputs to file
+log4j.appender.file.File=/usr/local/tomcat/logs/ra-two.log
+log4j.appender.file.MaxFileSize=10MB
+log4j.appender.file.MaxBackupIndex=1000
+log4j.appender.file.layout=org.apache.log4j.PatternLayout
+log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+
+# ra-two-biz-service-impl
+log4j.logger.com.bbd.dafei.biz.service.impl=INFO, biz-service-impl
+log4j.appender.biz-service-impl=org.apache.log4j.RollingFileAppender
+log4j.appender.biz-service-impl.File=/usr/local/tomcat/logs/ra-two-biz-service-impl.log
+log4j.appender.biz-service-impl.Append=true
+log4j.appender.biz-service-impl.layout=org.apache.log4j.PatternLayout
+log4j.appender.biz-service-impl.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.biz-service-impl.encoding=UTF-8
+
+# ra-two-biz-shared
+log4j.logger.com.bbd.dafei.biz.shared=INFO, biz-shared
+log4j.appender.biz-shared=org.apache.log4j.RollingFileAppender
+log4j.appender.biz-shared.File=/usr/local/tomcat/logs/ra-two-biz-shared.log
+log4j.appender.biz-shared.Append=true
+log4j.appender.biz-shared.layout=org.apache.log4j.PatternLayout
+log4j.appender.biz-shared.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.biz-shared.encoding=UTF-8
+
+# ra-two-common-dal
+log4j.logger.com.bbd.dafei.common.dal=DEBUG, common-dal
+log4j.additivity.com.ibatis=false
+log4j.additivity.ibatis.common.jdbc.SimpleDataSource=false
+log4j.additivity.ibatis.common.jdbc.ScriptRunner=false
+log4j.additivity.com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate=false
+log4j.additivity.java.sql.Connection=false
+log4j.additivity.java.sql.Statement=false
+log4j.additivity.java.sql.PreparedStatement=false
+log4j.logger.com.ibatis=DEBUG, common-dal  
+log4j.logger.com.ibatis.common.jdbc.SimpleDataSource=DEBUG, common-dal  
+log4j.logger.com.ibatis.common.jdbc.ScriptRunner=DEBUG, common-dal  
+log4j.logger.com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate=DEBUG, common-dal  
+log4j.logger.java.sql.Connection=DEBUG, common-dal  
+log4j.logger.java.sql.Statement=DEBUG, common-dal  
+log4j.logger.java.sql.PreparedStatement=DEBUG, common-dal
+log4j.appender.common-dal=org.apache.log4j.RollingFileAppender
+log4j.appender.common-dal.File=/usr/local/tomcat/logs/ra-two-common-dal.log
+log4j.appender.common-dal.Append=true
+log4j.appender.common-dal.layout=org.apache.log4j.PatternLayout
+log4j.appender.common-dal.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.common-dal.encoding=UTF-8
+
+# ra-two-common-service-facade
+log4j.logger.com.bbd.dafei.common.service.facade=INFO, common-service-facade
+log4j.appender.common-service-facade=org.apache.log4j.RollingFileAppender
+log4j.appender.common-service-facade.File=/usr/local/tomcat/logs/ra-two-common-service-facade.log
+log4j.appender.common-service-facade.Append=true
+log4j.appender.common-service-facade.layout=org.apache.log4j.PatternLayout
+log4j.appender.common-service-facade.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.common-service-facade.encoding=UTF-8
+
+# ra-two-common-service-integration
+log4j.logger.com.bbd.dafei.common.service.integration=INFO, common-service-integration
+log4j.appender.common-service-integration=org.apache.log4j.RollingFileAppender
+log4j.appender.common-service-integration.File=/usr/local/tomcat/logs/ra-two-common-service-integration.log
+log4j.appender.common-service-integration.Append=true
+log4j.appender.common-service-integration.layout=org.apache.log4j.PatternLayout
+log4j.appender.common-service-integration.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.common-service-integration.encoding=UTF-8
+
+# ra-two-common-util
+log4j.logger.com.bbd.dafei.common.util=INFO, common-util
+log4j.appender.common-util=org.apache.log4j.RollingFileAppender
+log4j.appender.common-util.File=/usr/local/tomcat/logs/ra-two-common-util.log
+log4j.appender.common-util.Append=true
+log4j.appender.common-util.layout=org.apache.log4j.PatternLayout
+log4j.appender.common-util.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.common-util.encoding=UTF-8
+
+# ra-two-core-model
+log4j.logger.com.bbd.dafei.core.model=INFO, core-model
+log4j.appender.core-model=org.apache.log4j.RollingFileAppender
+log4j.appender.core-model.File=/usr/local/tomcat/logs/ra-two-core-model.log
+log4j.appender.core-model.Append=true
+log4j.appender.core-model.layout=org.apache.log4j.PatternLayout
+log4j.appender.core-model.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.core-model.encoding=UTF-8
+
+# ra-two-core-service
+log4j.logger.com.bbd.dafei.core.service=INFO, core-service
+log4j.appender.core-service=org.apache.log4j.RollingFileAppender
+log4j.appender.core-service.File=/usr/local/tomcat/logs/ra-two-core-service.log
+log4j.appender.core-service.Append=true
+log4j.appender.core-service.layout=org.apache.log4j.PatternLayout
+log4j.appender.core-service.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.core-service.encoding=UTF-8
+
+# ra-two-web
+log4j.logger.com.bbd.dafei.web=INFO, core-service
+log4j.appender.web=org.apache.log4j.RollingFileAppender
+log4j.appender.web.File=/usr/local/tomcat/logs/ra-two-web.log
+log4j.appender.web.Append=true
+log4j.appender.web.layout=org.apache.log4j.PatternLayout
+log4j.appender.web.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss}||%t||%p||%l:%L||%m %x||%n
+log4j.appender.web.encoding=UTF-8
+
+
+

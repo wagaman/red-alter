@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaCompanyMapper">
+
+    <select id="getRadarByCompany" resultType="com.bbd.dafei.common.modal.vo.RaCompanyVO"
+            parameterType="java.lang.String">
+        select index_radar as indexRadar
+        from ra_company
+        WHERE
+           company = #{company};
+    </select>
+
+    <select id="getRadarByCompanyId" resultType="com.bbd.dafei.common.modal.vo.RaCompanyVO"
+            parameterType="java.lang.String">
+        select index_radar as indexRadar
+        from ra_company
+        WHERE
+        id = #{companyId};
+    </select>
+
+
+    <select id="getScanByCompany" resultType="com.bbd.dafei.common.modal.vo.RaCompanyVO"
+            parameterType="java.lang.String">
+        select risk_scan as riskScan
+        from ra_company
+        WHERE
+        company = #{company};
+    </select>
+
+    <select id="getScanByCompanyId" resultType="com.bbd.dafei.common.modal.vo.RaCompanyVO"
+            parameterType="java.lang.String">
+        select risk_scan as riskScan
+        from ra_company
+        WHERE
+        id = #{companyId};
+    </select>
+
+    <select id="getSortByCompany" resultType="com.bbd.dafei.common.modal.vo.RaCompanyVO"
+            parameterType="java.lang.String">
+        select index_sort as indexSort
+        from ra_company
+        WHERE
+        company = #{company};
+    </select>
+
+    <select id="getSortByCompanyId" resultType="com.bbd.dafei.common.modal.vo.RaCompanyVO"
+            parameterType="java.lang.String">
+        select index_sort as indexSort
+        from ra_company
+        WHERE
+        id = #{companyId};
+    </select>
+
+
+    <select id="findCompanyByName" resultType="com.bbd.dafei.common.dal.po.RaCompanyPO">
+        select c.id,c.province,c.city,c.area,c.company,c.risk_index as riskindex,c.risk_level as risklevel,c.rise,c.industry,
+        c.index_radar as indexradar,c.risk_scan as riskscan,c.index_sort as indexsort,c.company_detail as companydetail,
+        c.gmt_create as gmtcreate,c.gmt_update as gmtupdate
+        from ra_company c where c.company = #{companyName}
+    </select>
+
+    <select id="findCompanyById" resultType="com.bbd.dafei.common.dal.po.RaCompanyPO">
+        select c.id,c.province,c.city,c.area,c.company,c.risk_index as riskindex,c.risk_level as risklevel,c.rise,c.industry,
+        c.index_radar as indexradar,c.risk_scan as riskscan,c.index_sort as indexsort,c.company_detail as companydetail,
+        c.gmt_create as gmtcreate,c.gmt_update as gmtupdate
+        from ra_company c where c.id = #{companyId}
+    </select>
+
+    <select id="findCompanysByIds" resultType="com.bbd.dafei.common.dal.po.RaCompanyPO">
+        select c.id,c.province,c.city,c.area,c.company,c.risk_index as riskindex,c.risk_level as
+        risklevel,c.rise,c.industry,
+        c.index_radar as indexradar,c.risk_scan as riskscan,c.index_sort as indexsort,c.company_detail as companydetail,
+        c.gmt_create as gmtcreate,c.gmt_update as gmtupdate
+        from ra_company c where c.id in
+        <foreach collection="companyIds" item="companyId" open="(" separator="," close=")">
+            #{companyId}
+        </foreach>
+    </select>
+
+
+    <select id="searchCount" resultType="int">
+        SELECT count(*)
+        FROM   ra_company
+        WHERE  company like CONCAT('%',#{keyword},'%')
+    </select>
+
+    <select id="search" resultType="com.bbd.dafei.common.dal.po.RaCompanyPO">
+        SELECT id,company
+        FROM   ra_company
+        WHERE  company like CONCAT('%',#{keyword},'%')
+        limit ${page.start},${page.pageSize}
+    </select>
+
+    <select id="count" resultType="int">
+        SELECT count(*)
+        FROM ra_company
+        WHERE province = #{province}
+        <if test="industry!=null and industry!='' ">
+            AND industry=#{industry}
+        </if>
+        <if test="city!=null and city!='' ">
+            AND city=#{city}
+        </if>
+
+        <if test="area!=null and area!='' ">
+            AND area=#{area}
+        </if>
+    </select>
+
+    <select id="industryCount" resultType="int">
+        select count(*)
+        from ra_company
+        where
+        province =#{province}
+        and city =#{city}
+        and area = #{area}
+        <if test="industry != null and industry != ''">
+            AND industry = #{industry}
+        </if>
+        and risk_level =#{riskLevel}
+    </select>
+
+
+    <select id="findIndexCompanyPage" resultType="com.bbd.dafei.common.modal.vo.RaIndexCompanyVO">
+
+        SELECT (@numIndex:=@numIndex+1) numIndex,id,province,city,area,company,risk_index riskindex,risk_level
+        risklevel,risk_rise riskrise,rise,industry, case when area = '无' then city else concat(city,area) end registerArea
+        FROM ra_company c,(select @numIndex:=0 from dual) t
+        <where>
+            c.is_black = 0
+            <if test="map.province!=null and map.province!='' ">
+                AND c.province=#{map.province}
+            </if>
+
+            <if test="map.city!=null and map.city!='' ">
+                AND c.city=#{map.city}
+            </if>
+
+            <if test="map.area!=null and map.area!='' ">
+                AND c.area=#{map.area}
+            </if>
+
+            <if test="map.industry!=null and map.industry!='' ">
+                AND c.industry=#{map.industry}
+            </if>
+
+            <if test="map.riskLevel!=null and map.riskLevel!='' ">
+                AND c.risk_level=#{map.riskLevel}
+            </if>
+        </where>
+        ORDER BY ${map.order} ${map.descAsc}
+
+    </select>
+
+    <update id="updateIsBlackById">
+        UPDATE
+        ra_company
+        SET
+        is_black = #{isBlackValue}
+        WHERE
+        id in
+        <foreach collection="companyIds" item="companyId" open="(" separator="," close=")">
+            #{companyId}
+        </foreach>
+    </update>
+</mapper>

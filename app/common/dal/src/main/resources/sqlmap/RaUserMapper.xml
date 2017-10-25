@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaUserMapper">
+    <resultMap id="userPO" type="com.bbd.dafei.common.dal.po.UserPO"></resultMap>
+
+    <!-- 添加用户 -->
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+        insert into ra_user(username,password,valid_date,tel,email,salt,province,`type`,user_status,remark,update_by,create_by)
+        values(#{username},#{password},#{validDate},#{tel,jdbcType=VARCHAR},#{email,jdbcType=VARCHAR}
+        ,#{salt},#{province,jdbcType=VARCHAR},#{type},'正常',#{remark,jdbcType=VARCHAR},#{updateBy,jdbcType=VARCHAR},#{createBy,jdbcType=VARCHAR})
+    </insert>
+
+    <!-- 修改前台用户 -->
+    <update id="updateFrontUser">
+        update ra_user set password=#{password},valid_date=#{validDate},tel=#{tel},email=#{email},salt=#{salt},
+        province=#{province},user_status=#{userStatus},remark=#{remark},update_by=#{updateBy},gmt_update=now()
+        where id=#{id}
+    </update>
+
+    <!-- 修改后台用户 -->
+    <update id="updateManageUser">
+        update ra_user set password=#{password},salt=#{salt},
+        user_status=#{userStatus},remark=#{remark},update_by=#{updateBy},gmt_update=now()
+        where id=#{id}
+    </update>
+
+    <!-- 根据id批量注销用户 -->
+    <update id="updateLogoutBatchByIds">
+        update ra_user
+        set user_status = '注销',update_by = #{updateBy,jdbcType=VARCHAR},gmt_update=now()
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据id查询用户 -->
+    <select id="findUserById" resultMap="userPO">
+        select
+        <include refid="columns"/>
+        from ra_user
+        where id = #{id}
+    </select>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="findUserByName" resultMap="userPO">
+        select
+        <include refid="columns"/>
+        from ra_user
+        where username = #{userName}
+    </select>
+
+    <!-- 分页条件查询前台用户信息 -->
+    <select id="findFrontUserInfoListPage" resultType="com.bbd.dafei.common.modal.dto.UserDTO">
+        <include refid="commonQueryUser"/>
+        where u.user_status = '正常'
+        and u.`type` = 1
+        <if test="map.userName != null and map.userName != ''">
+            and u.username like concat(concat('%',#{map.userName}),'%')
+        </if>
+        <if test="map.province != null and map.province != ''">
+            and u.province = #{map.province}
+        </if>
+        order by u.id desc
+    </select>
+
+    <!-- 分页条件查询前台用户信息 -->
+    <select id="findManageUserInfoListPage" resultMap="userPO">
+        select <include refid="columns"/> from ra_user u
+        where u.user_status = '正常'
+        and u.`type` = 2
+        <if test="map.userName != null and map.userName != ''">
+        and u.username like concat(concat('%',#{map.userName}),'%')
+        </if>
+        order by u.id desc
+        </select>
+
+    <!-- 根据id查询用户信息 -->
+    <select id="findUserInfoById" resultType="com.bbd.dafei.common.modal.dto.UserDTO">
+        <include refid="commonQueryUser"/>
+        where u.id = #{id}
+    </select>
+
+    <!-- 根据用户名和用户类型查询用户 -->
+    <select id="findUserByNameAndType" resultMap="userPO">
+        select <include refid="columns"/>
+        from ra_user where username=#{userName} and `type` = #{type}
+    </select>
+
+    <sql id="commonQueryUser">
+        select u.id,u.username,u.password,u.province,u.tel,u.email,u.remark,u.gmt_create gmtcreate,u.gmt_update gmtupdate,
+        u.valid_date validdate,u.create_by createby,u.update_by updateby,user_status userstatus,
+        r.remaining_number researchReportRemainTimes
+        from ra_user u
+        left join ra_research_report r on u.id = r.id
+
+    </sql>
+
+    <sql id="columns">
+        id,username,password,valid_date validdate,tel,email,salt,province,`type`,user_status,remark,
+        gmt_update gmtupdate,update_by updateby,gmt_create gmtcreate,create_by createby
+    </sql>
+
+
+</mapper>

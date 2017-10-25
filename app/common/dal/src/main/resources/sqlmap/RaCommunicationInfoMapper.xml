@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaCommunicationInfoMapper">
+
+    <select id="getInfoByUserType" resultType="com.bbd.dafei.common.modal.dto.RaCommunicationInfoDTO">
+        select user_type,email,username,password,des_key,status,gmt_create,gmt_update
+        from ra_communication_info
+        where user_type = #{userType} and status = #{status};
+    </select>
+</mapper>

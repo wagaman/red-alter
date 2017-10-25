@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaAreaCountMapper">
+
+
+    <select id="rankByProvince" resultType="string">
+
+        SELECT   province
+        FROM     ra_area_count
+        GROUP BY province
+        ORDER BY SUM(high_risk) / SUM(monitor)
+
+    </select>
+
+    <select id="mapProvince" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT o.city region,
+        ( SELECT COUNT(*)
+        FROM ra_area_count
+        WHERE province = #{province}
+        and city=o.city
+        and city!=area
+        and area!='无'
+
+        ) AS monitorRegion,
+        IFNULL(h.highCompany,0) AS highCompany,
+        <choose>
+            <when test="industry == '网络借贷'">
+                SUM(net_add_high_risk) - SUM(net_lessen_high_risk) AS changeHighCompany,
+                SUM(net_add_monitor) - SUM(net_lessen_monitor) AS changeMonitorCompany,
+                SUM(net_loan) as monitorCompany,
+            </when>
+            <when test="industry == '私募基金'">
+                SUM(private_fund_add_high_risk) - SUM(private_fund_lessen_high_risk) AS changeHighCompany,
+                SUM(private_fund_add_monitor) - SUM(private_fund_lessen_monitor) AS changeMonitorCompany,
+                SUM(private_fund) as monitorCompany,
+            </when>
+            <when test="industry == '交易场所'">
+                SUM(trade_place_add_high_risk) - SUM(trade_place_lessen_high_risk) AS changeHighCompany,
+                SUM(trade_place_add_monitor) - SUM(trade_place_lessen_monitor) AS changeMonitorCompany,
+                SUM(trade_place) as monitorCompany,
+            </when>
+            <when test="industry == '融资担保'">
+                SUM(financing_guarantee_add_high_risk) - SUM(financing_guarantee_lessen_high_risk) AS changeHighCompany,
+                SUM(financing_guarantee_add_monitor) - SUM(financing_guarantee_lessen_monitor) AS changeMonitorCompany,
+                SUM(financing_guarantee) as monitorCompany,
+            </when>
+            <when test="industry == '小额贷款'">
+                SUM(petty_loan_add_high_risk) - SUM(petty_loan_lessen_high_risk) AS changeHighCompany,
+                SUM(petty_loan_add_monitor) - SUM(petty_loan_lessen_monitor) AS changeMonitorCompany,
+                SUM(petty_loan) as monitorCompany,
+            </when>
+            <when test="industry == '新兴金融'">
+                SUM(other_add_high_risk) - SUM(other_lessen_high_risk) AS changeHighCompany,
+                SUM(other_add_monitor) - SUM(other_lessen_monitor) AS changeMonitorCompany,
+                SUM(rising_financial) as monitorCompany,
+            </when>
+            <otherwise>
+                SUM(add_high_risk) - SUM(lessen_high_risk) AS changeHighCompany,
+                SUM(add_monitor) - SUM(lessen_monitor) AS changeMonitorCompany,
+                SUM(monitor) as monitorCompany,
+            </otherwise>
+        </choose>
+        n.highCollect
+        FROM ra_area_count o
+
+        LEFT JOIN (
+        SELECT a.city ,
+        group_concat(a.area order by a.high_risk desc separator '、') highCollect
+        from (select city,area,count(*) high_risk from ra_high_company where province=#{province}
+        <if test="industry != null and industry != ''">
+            and industry = #{industry}
+        </if>
+        group by city,area) a
+        where a.high_risk > 0
+        GROUP BY a.city
+
+        ) n on n.city=o.city
+
+        left join (
+        select city,count(*) AS highCompany
+        from ra_high_company
+        where province = #{province}
+        <if test="industry != null and industry != ''">
+            and industry = #{industry}
+        </if>
+        group by city
+        ) h on o.city = h.city
+        WHERE o.province = #{province}
+        GROUP BY o.city
+
+    </select>
+
+
+    <select id="mapCity" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT o.area region,
+        IFNULL(h.highCompany,0) AS highCompany,
+        <choose>
+            <when test="industry == '网络借贷'">
+                net_add_high_risk - net_lessen_high_risk AS changeHighCompany,
+                net_add_monitor - net_lessen_monitor AS changeMonitorCompany,
+                net_loan as monitorCompany
+            </when>
+            <when test="industry == '私募基金'">
+                private_fund_add_high_risk - private_fund_lessen_high_risk AS changeHighCompany,
+                private_fund_add_monitor - private_fund_lessen_monitor AS changeMonitorCompany,
+                private_fund as monitorCompany
+            </when>
+            <when test="industry == '交易场所'">
+                trade_place_add_high_risk - trade_place_lessen_high_risk AS changeHighCompany,
+                trade_place_add_monitor - trade_place_lessen_monitor AS changeMonitorCompany,
+                trade_place as monitorCompany
+            </when>
+            <when test="industry == '融资担保'">
+                financing_guarantee_add_high_risk - financing_guarantee_lessen_high_risk AS changeHighCompany,
+                financing_guarantee_add_monitor - financing_guarantee_lessen_monitor AS changeMonitorCompany,
+                financing_guarantee as monitorCompany
+            </when>
+            <when test="industry == '小额贷款'">
+                petty_loan_add_high_risk - petty_loan_lessen_high_risk AS changeHighCompany,
+                petty_loan_add_monitor - petty_loan_lessen_monitor AS changeMonitorCompany,
+                petty_loan as monitorCompany
+            </when>
+            <when test="industry == '新兴金融'">
+                other_add_high_risk - other_lessen_high_risk AS changeHighCompany,
+                other_add_monitor - other_lessen_monitor AS changeMonitorCompany,
+                rising_financial as monitorCompany
+            </when>
+            <otherwise>
+                add_high_risk - lessen_high_risk AS changeHighCompany,
+                add_monitor - lessen_monitor AS changeMonitorCompany,
+                monitor as monitorCompany
+            </otherwise>
+        </choose>
+        FROM ra_area_count o
+        left join (
+        select area,count(*) AS highCompany
+        from ra_high_company
+        where province = #{province} and city=#{city}
+        <if test="industry != null and industry != ''">
+            and industry = #{industry}
+        </if>
+        group by area
+        ) h on o.area = h.area
+        WHERE o.province = #{province} and o.city=#{city}
+
+    </select>
+
+    <select id="provinceRealTimeMonitoring" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+           SELECT   ( SELECT COUNT(*)
+                      FROM (
+                              SELECT city
+                              FROM ra_area_count
+                              WHERE province = #{province} and province!=city and city != '无'
+                              GROUP BY city
+                            ) n
+                     ) AS monitorRegion,
+                     province AS region,
+                     SUM(high_risk) AS highCompany,
+                     SUM(add_high_risk) - SUM(lessen_high_risk) AS changeHighCompany,
+                     SUM(add_high_risk) addHighRisk,
+                     0 - SUM(lessen_high_risk) lessenHighRisk,
+                     SUM(monitor) AS monitorCompany ,
+                     SUM(add_monitor) - SUM(lessen_monitor) AS changeMonitorCompany,
+                     SUM(add_monitor) addMonitor,
+                     0 - SUM(lessen_monitor) lessenmonitor,
+                     ROUND(SUM(high_risk) / SUM(monitor), 2) AS proportion
+           FROM ra_area_count a
+           WHERE a.province = #{province}
+
+    </select>
+
+    <select id="cityRealTimeMonitoring" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT (
+        SELECT COUNT(*)
+        FROM ra_area_count
+        WHERE province = #{province}
+        AND city=#{city}
+        AND city!=area
+        AND area!='无'
+        ) AS monitorRegion,
+        <if test="area!=null and area!='' ">area</if>
+        <if test="area==null or area=='' ">city</if>
+        AS region,
+        SUM(high_risk) AS highCompany,
+        SUM(add_high_risk) - SUM(lessen_high_risk) AS changeHighCompany,
+        SUM(add_high_risk) addHighRisk,
+        0 - SUM(lessen_high_risk) lessenHighRisk,
+        SUM(monitor) AS monitorCompany ,
+        SUM(add_monitor) - SUM(lessen_monitor) AS changeMonitorCompany,
+        SUM(add_monitor) addMonitor,
+        0 - SUM(lessen_monitor) lessenmonitor,
+        ROUND(SUM(high_risk) / SUM(monitor), 2) AS proportion
+        FROM ra_area_count a
+        WHERE a.province = #{province}
+        AND a.city = #{city}
+        <if test="area!=null and area!='' ">AND a.area = #{area}</if>
+
+    </select>
+
+
+    <select id="highCompanyTop" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT
+        <if test="city == null">city AS region,</if>
+        <if test="city != null">area AS region,</if>
+        SUM(high_risk) AS highCompany,
+        ROUND(SUM(high_risk) / (
+        SELECT SUM(high_risk)
+        FROM ra_area_count
+        WHERE province = #{province}
+        <if test="city != null">AND city=#{city}</if>
+        )
+        ,2) AS proportion
+        FROM ra_area_count a
+
+        WHERE a.province = #{province}
+        <if test="city != null">and a.city=#{city}</if>
+
+        GROUP BY
+        <if test="city == null">city</if>
+        <if test="city != null">area</if>
+
+        ORDER BY highCompany desc
+        LIMIT 3
+
+    </select>
+
+
+    <select id="highIndustry" resultType="com.bbd.dafei.common.modal.dto.KeyValDTO">
+
+        SELECT industry k, count(*) v
+
+        FROM ra_high_company
+
+        WHERE province=#{province}
+        <if test="city != null and city != ''">AND city=#{city}</if>
+        <if test="area != null and area != ''">AND area=#{area}</if>
+
+        GROUP BY industry
+
+    </select>
+
+
+    <select id="monitorTypeCount" resultType="com.bbd.dafei.common.modal.dto.AreaCountDTO">
+
+        SELECT area AS region,
+               high_risk  highCompany,
+               focus_on,
+               sustain_monitor
+        FROM    ra_area_count a
+        WHERE   a.province = #{province}
+                AND a.city = #{city}
+                AND a.area = #{area}
+
+    </select>
+
+
+    <update id="addHigh">
+          UPDATE  ra_area_count
+          SET     high_risk = high_risk + #{add}
+          WHERE   province = #{province}
+                  AND city = #{city}
+                  AND area = #{area}
+    </update>
+
+    <update id="updateCount">
+
+        UPDATE ra_area_count
+        SET high_risk = (
+        SELECT COUNT(*)
+        FROM ra_high_company
+        WHERE city = #{city}
+        AND area = #{area}
+        <if test="province!=null and province!=''">and province = #{province}</if>
+        ),
+        monitor = (high_risk + focus_on + sustain_monitor)
+        WHERE city = #{city}
+        AND area = #{area}
+        <if test="province!=null and province!=''">and province = #{province}</if>
+    </update>
+
+    <select id="provinceRealTimeMonitorByIndustry"
+            resultType="com.bbd.dafei.common.modal.dto.IndustryRealTimeMonitoringDTO">
+        SELECT   ( SELECT COUNT(*)
+                      FROM (
+                              SELECT city
+                              FROM ra_area_count
+                              WHERE province = #{province} and province!=city and city != '无'
+                              GROUP BY city
+                            ) n
+                     ) AS monitorRegion,
+                     province AS region,
+                     SUM(high_risk) AS highCompany,
+                     SUM(add_high_risk) - SUM(lessen_high_risk) AS changeHighCompany,
+                     SUM(add_high_risk) addHighRisk,
+                     0 - SUM(lessen_high_risk) lessenHighRisk,
+                     SUM(net_add_high_risk) - SUM(net_lessen_high_risk) AS netChangeHighCompany,
+                     SUM(net_add_high_risk) netAddHighRisk,
+                     0 - SUM(net_lessen_high_risk) netLessenHighRisk,
+                     sum(rising_financial) as rising_financial,
+                     sum(net_loan) as net_loan ,
+                     sum(private_fund) as private_fund,
+                     sum(trade_place) as trade_place,
+                     sum(financing_guarantee) as financing_guarantee,
+                     sum(petty_loan) as petty_loan,
+                     SUM(private_fund_add_high_risk) - SUM(private_fund_lessen_high_risk) AS privateFundChangeHighCompany,
+                     SUM(private_fund_add_high_risk) privateFundAddHighRisk,
+                     0 - SUM(private_fund_lessen_high_risk) privateFundLessenHighRisk,
+                     SUM(trade_place_add_high_risk) - SUM(trade_place_lessen_high_risk) AS tradePlaceChangeHighCompany,
+                     SUM(trade_place_add_high_risk) tradePlaceAddHighRisk,
+                     0 - SUM(trade_place_lessen_high_risk) tradePlaceLessenHighRisk,
+                     SUM(financing_guarantee_add_high_risk) - SUM(financing_guarantee_lessen_high_risk) AS financingGuaranteeChangeHighCompany,
+                     SUM(financing_guarantee_add_high_risk) financingGuaranteeAddHighRisk,
+                     0 - SUM(financing_guarantee_lessen_high_risk) financingGuaranteeLessenHighRisk,
+                     SUM(petty_loan_add_high_risk) - SUM(petty_loan_lessen_high_risk) AS pettyLoanChangeHighCompany,
+                     SUM(petty_loan_add_high_risk) pettyLoanAddHighRisk,
+                     0 - SUM(petty_loan_lessen_high_risk) pettyLoanLessenHighRisk,
+					 SUM(other_add_high_risk) - SUM(other_lessen_high_risk) AS otherChangeHighCompany,
+                     SUM(other_add_high_risk) otherAddHighRisk,
+                     0 - SUM(other_lessen_high_risk) otherLessenHighRisk,
+                     SUM(monitor) AS monitorCompany,
+                     SUM(add_monitor) - SUM(lessen_monitor) AS changeMonitorCompany,
+                     SUM(add_monitor) addMonitor,
+                     0 - SUM(lessen_monitor) lessenmonitor,
+					 SUM(net_add_monitor) - SUM(net_lessen_monitor) AS netChangeMonitorCompany,
+                     SUM(net_add_monitor) netAddMonitor,
+                     0 - SUM(net_lessen_monitor) netLessenmonitor,
+					 SUM(private_fund_add_monitor) - SUM(private_fund_lessen_monitor) AS privateFundChangeMonitorCompany,
+                     SUM(private_fund_add_monitor) privateFundAddMonitor,
+                     0 - SUM(private_fund_lessen_monitor) privateFundLessenmonitor,
+					 SUM(trade_place_add_monitor) - SUM(trade_place_lessen_monitor) AS tradePlaceChangeMonitorCompany,
+                     SUM(trade_place_add_monitor) tradePlaceAddMonitor,
+                     0 - SUM(trade_place_lessen_monitor) tradePlaceLessenmonitor,
+					 SUM(petty_loan_add_monitor) - SUM(petty_loan_lessen_monitor) AS pettyLoanChangeMonitorCompany,
+                     SUM(petty_loan_add_monitor) pettyLoanAddMonitor,
+                     0 - SUM(petty_loan_lessen_monitor) pettyLoanLessenmonitor,
+					 SUM(financing_guarantee_add_monitor) - SUM(financing_guarantee_lessen_monitor) AS financingGuaranteeChangeMonitorCompany,
+                     SUM(financing_guarantee_add_monitor) financingGuaranteeAddMonitor,
+                     0 - SUM(financing_guarantee_lessen_monitor) financingGuaranteeLessenmonitor,
+					 SUM(other_add_monitor) - SUM(other_lessen_monitor) AS otherChangeMonitorCompany,
+                     SUM(other_add_monitor) otherAddMonitor,
+                     0 - SUM(other_lessen_monitor) otherLessenmonitor,
+                     ROUND(SUM(high_risk) / SUM(monitor), 2) AS proportion
+           FROM ra_area_count a
+           WHERE a.province = #{province}
+    </select>
+
+    <select id="cityRealTimeMonitoringByIndustry"
+            resultType="com.bbd.dafei.common.modal.dto.IndustryRealTimeMonitoringDTO">
+        SELECT (
+        SELECT COUNT(*)
+        FROM ra_area_count
+        WHERE province = #{province}
+        AND city=#{city}
+        AND city!=area
+        AND area!='无'
+        ) AS monitorRegion,
+        <if test="area!=null and area!='' ">area</if>
+        <if test="area==null or area=='' ">city</if>
+        AS region,
+        SUM(high_risk) AS highCompany,
+        SUM(add_high_risk) - SUM(lessen_high_risk) AS changeHighCompany,
+        SUM(add_high_risk) addHighRisk,
+        0 - SUM(lessen_high_risk) lessenHighRisk,
+        SUM(net_add_high_risk) - SUM(net_lessen_high_risk) AS netChangeHighCompany,
+        SUM(net_add_high_risk) netAddHighRisk,
+        0 - SUM(net_lessen_high_risk) netLessenHighRisk,
+        sum(rising_financial) as rising_financial,
+        sum(net_loan) as net_loan ,
+        sum(private_fund) as private_fund,
+        sum(trade_place) as trade_place,
+        sum(financing_guarantee) as financing_guarantee,
+        sum(petty_loan) as petty_loan,
+        SUM(private_fund_add_high_risk) - SUM(private_fund_lessen_high_risk) AS privateFundChangeHighCompany,
+        SUM(private_fund_add_high_risk) privateFundAddHighRisk,
+        0 - SUM(private_fund_lessen_high_risk) privateFundLessenHighRisk,
+        SUM(trade_place_add_high_risk) - SUM(trade_place_lessen_high_risk) AS tradePlaceChangeHighCompany,
+        SUM(trade_place_add_high_risk) tradePlaceAddHighRisk,
+        0 - SUM(trade_place_lessen_high_risk) tradePlaceLessenHighRisk,
+        SUM(financing_guarantee_add_high_risk) - SUM(financing_guarantee_lessen_high_risk) AS
+        financingGuaranteeChangeHighCompany,
+        SUM(financing_guarantee_add_high_risk) financingGuaranteeAddHighRisk,
+        0 - SUM(financing_guarantee_lessen_high_risk) financingGuaranteeLessenHighRisk,
+        SUM(petty_loan_add_high_risk) - SUM(petty_loan_lessen_high_risk) AS pettyLoanChangeHighCompany,
+        SUM(petty_loan_add_high_risk) pettyLoanAddHighRisk,
+        0 - SUM(petty_loan_lessen_high_risk) pettyLoanLessenHighRisk,
+        SUM(other_add_high_risk) - SUM(other_lessen_high_risk) AS otherChangeHighCompany,
+        SUM(other_add_high_risk) otherAddHighRisk,
+        0 - SUM(other_lessen_high_risk) otherLessenHighRisk,
+        SUM(monitor) AS monitorCompany,
+        SUM(add_monitor) - SUM(lessen_monitor) AS changeMonitorCompany,
+        SUM(add_monitor) addMonitor,
+        0 - SUM(lessen_monitor) lessenmonitor,
+        SUM(net_add_monitor) - SUM(net_lessen_monitor) AS netChangeMonitorCompany,
+        SUM(net_add_monitor) netAddMonitor,
+        0 - SUM(net_lessen_monitor) netLessenmonitor,
+        SUM(private_fund_add_monitor) - SUM(private_fund_lessen_monitor) AS privateFundChangeMonitorCompany,
+        SUM(private_fund_add_monitor) privateFundAddMonitor,
+        0 - SUM(private_fund_lessen_monitor) privateFundLessenmonitor,
+        SUM(trade_place_add_monitor) - SUM(trade_place_lessen_monitor) AS tradePlaceChangeMonitorCompany,
+        SUM(trade_place_add_monitor) tradePlaceAddMonitor,
+        0 - SUM(trade_place_lessen_monitor) tradePlaceLessenmonitor,
+        SUM(petty_loan_add_monitor) - SUM(petty_loan_lessen_monitor) AS pettyLoanChangeMonitorCompany,
+        SUM(petty_loan_add_monitor) pettyLoanAddMonitor,
+        0 - SUM(petty_loan_lessen_monitor) pettyLoanLessenmonitor,
+        SUM(financing_guarantee_add_monitor) - SUM(financing_guarantee_lessen_monitor) AS
+        financingGuaranteeChangeMonitorCompany,
+        SUM(financing_guarantee_add_monitor) financingGuaranteeAddMonitor,
+        0 - SUM(financing_guarantee_lessen_monitor) financingGuaranteeLessenmonitor,
+        SUM(other_add_monitor) - SUM(other_lessen_monitor) AS otherChangeMonitorCompany,
+        SUM(other_add_monitor) otherAddMonitor,
+        0 - SUM(other_lessen_monitor) otherLessenmonitor,
+        ROUND(SUM(high_risk) / SUM(monitor), 2) AS proportion
+        FROM ra_area_count a
+        WHERE a.province = #{province}
+        AND a.city = #{city}
+        <if test="area!=null and area!='' ">AND a.area = #{area}</if>
+    </select>
+
+    <select id="getFoucsAndSustainData" resultType="com.bbd.dafei.common.modal.vo.RaAreaCountFoucsAndSustainVO">
+        select
+             net_focus_on,
+             net_sustain_monitor,
+             private_fund_focus_on,
+             private_fund_sustain_monitor,
+             trade_place_focus_on,
+             trade_place_sustain_monitor,
+             financing_guarantee_focus_on,
+             financing_guarantee_sustain_monitor,
+             petty_loan_focus_on,
+             petty_loan_sustain_monitor,
+             other_focus_on,
+             other_sustain_monitor
+        from
+             ra_area_count
+        where
+             province = #{province} AND
+             city = #{city} AND
+             area = #{area}
+    </select>
+
+    <update id="updateColumnValue">
+        UPDATE
+          ra_area_count
+        SET
+        <foreach collection="columnNames" item="columnName" open="" separator="," close="" >
+            ${columnName} =  ${columnName} + #{columnValue}
+        </foreach>
+        WHERE
+          province = #{province} AND area = #{area} AND city = #{city}
+    </update>
+</mapper>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaUpdateMapper" >
+
+    <!-- 保存企业更正信息 -->
+    <insert id="saveRaUpdateInfo" >
+        insert into ra_update(username,company_id,company,content,gmt_update,gmt_create)
+        values (#{username},#{companyId},#{company},#{content},#{gmtUpdate},#{gmtCreate});
+    </insert>
+</mapper>

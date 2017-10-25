@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaSimpleDetailMapper" >
+
+    <select id="save"  parameterType="com.bbd.dafei.common.modal.dto.RaSimpleDetailDTO" >
+        insert into ra_simple_detail(user_id,company,company_id,download_time,gmt_create,gmt_update)
+        values (#{userId},#{company},#{companyId},#{downloadTime},#{gmtCreate},#{gmtUpdate});
+    </select>
+</mapper>

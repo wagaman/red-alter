@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaCacheMapper" >
+
+
+    <select id="get" resultType="string">
+       select val from ra_cache where id=#{id}
+    </select>
+
+    <insert id="save"  >
+        insert into ra_cache (id,val,valid_date)
+        values               (#{id},#{val},#{validDate})
+    </insert>
+
+    <delete id="clean" >
+
+        DELETE FROM ra_cache
+
+        <if test="validDate!=null">
+          WHERE valid_date    <![CDATA[ < ]]>    #{validDate}
+        </if>
+
+    </delete>
+
+
+</mapper>

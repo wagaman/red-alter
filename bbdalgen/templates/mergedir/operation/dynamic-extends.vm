@@ -1,0 +1,25 @@
+ ##��vm���ں����Ķ�̬��չ
+ ##//��ѯ����ֵ
+       ##temp = (${operation.simpleReturnType}) getSqlMapClientTemplate().queryForObject("${operation.mappedStatementId}", ${paramName});
+	  ##//�����ܺ���ֶη����ѯʱ���˱����Ե��ֶ�
+##�˴���Ҫ�ж������������ֶε���������
+         ##String methodName = "set$!{finalRet}";
+		 ##Method[] methods = ${table.getQualifiedDOClassName()}.class.getMethods();
+		 ##Method realMethod = null;
+		 ##for(Method m:methods) {
+		     ##if(m.getName().equals(methodName)){
+        		  ##realMethod=m;
+        		  ##break;
+        	  ##}
+		## }
+		 ##try {
+			##realMethod.invoke(opDO,temp.get$!{finalRet}());
+		##} catch (IllegalArgumentException e) {
+		       ##logger.warn("error");
+		##} catch (IllegalAccessException e) {
+			##logger.warn("error");
+		##} catch (InvocationTargetException e) {
+			##logger.warn("error");
+		##}
+         
+          ##return temp

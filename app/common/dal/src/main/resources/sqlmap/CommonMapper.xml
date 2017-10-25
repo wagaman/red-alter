@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.CommonMapper">
+
+    <select id="getProvinces" resultType="string">
+        SELECT DISTINCT province
+        FROM   ra_area_count
+        where province != '无'
+        ORDER BY province
+    </select>
+
+    <select id="getCitys" resultType="string">
+
+        SELECT city
+        FROM   ra_area_count
+        WHERE  province = #{province}
+               AND city != '无'
+        GROUP BY city
+
+    </select>
+
+    <select id="getAreas" resultType="string">
+
+        SELECT area
+        FROM   ra_area_count
+        WHERE  province = #{province}
+               AND city = #{city}
+               AND area != '无'
+        GROUP BY area
+
+    </select>
+
+
+    <select id="exesql" resultType="map">
+        ${sql}
+    </select>
+
+
+</mapper>

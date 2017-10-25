@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.UserLogMapper">
+    <resultMap id="userLogDTO" type="com.bbd.dafei.common.modal.dto.UserLogDTO"></resultMap>
+
+    <!-- 保存用户日志 -->
+    <insert id="saveUserLog">
+        insert into ra_user_log(username,page,url,operation,ip,ip_location,detail)
+        values (#{userName},#{page},#{url},#{operation},#{ip,jdbcType=VARCHAR},#{ipLocation,jdbcType=VARCHAR},
+        #{detail})
+    </insert>
+
+    <!-- 分页条件查询用户日志 -->
+    <select id="findUserLogPage" resultMap="userLogDTO">
+        select
+        <include refid="columns"/>
+        from ra_user_log
+        <where>
+            <if test="map.userName != null and map.userName!=''">
+                and username = #{map.userName}
+            </if>
+            <if test="map.startDate != null and map.startDate!=''">
+                and gmt_create &gt;= #{map.startDate}
+            </if>
+            <if test="map.endDate != null and map.endDate!=''">
+                and gmt_create &lt;= #{map.endDate}
+            </if>
+            <if test="map.pageType != null and map.pageType!=''">
+                and page = #{map.pageType}
+            </if>
+        </where>
+        order by gmt_create desc
+    </select>
+
+    <!-- 查询所有页面类型 -->
+    <select id="findAllPageType" resultType="java.lang.String">
+        select distinct page from ra_user_log where page is not null
+    </select>
+
+    <!-- 根据id集合批量查询日志 -->
+    <select id="findLogsByIds" resultMap="userLogDTO">
+        SELECT
+        <include refid="columns"/>
+        from ra_user_log
+        where id in
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+
+    </select>
+
+    <sql id="columns">
+        id,username,page,url,operation,ip,ip_location iplocation,detail,gmt_create gmtcreate,gmt_update gmtupdate
+    </sql>
+
+
+</mapper>

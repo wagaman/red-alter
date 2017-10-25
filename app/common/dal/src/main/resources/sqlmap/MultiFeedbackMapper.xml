@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.MultiFeedbackMapper">
+
+    <select id="queryAllPage" resultType="com.bbd.dafei.common.modal.vo.FeedbackVO">
+        select i.* from (<include refid="queryFocusSql"></include>) i
+        union all
+        select i.* from (<include refid="queryCompanyRemarkSql"></include>) i
+        union all
+        select i.* from (<include refid="queryCompanyUpdateSql"></include>) i
+        union all
+        select i.* from (<include refid="queryFeedbackSql"></include>) i
+        order by otime desc
+
+    </select>
+
+    <select id="queryBlacklistPage" resultType="com.bbd.dafei.common.modal.vo.FeedbackVO">
+
+        <include refid="queryBlacklistSql"></include>
+
+    </select>
+
+
+    <sql id="queryBlacklistSql">
+
+        select * from (
+        select '黑名单' type,i.joindate gmtCreate,null canceldate,i.joinreason joinContent,i.joindate,null cancelreason,
+        b.company,i.joindate otime,b.add_user user
+        from ra_blacklist b
+        left join (select blacklist_id,GROUP_CONCAT(reason) joinreason,MAX(gmt_create) joindate from ra_blacklist_reason
+        where type in (1,2) group by blacklist_id) i on i.blacklist_id = b.id
+
+        <where>
+            <if test="map.user != null and map.user != ''">AND b.add_user=#{map.user}</if>
+            <if test="map.startDate != null and map.startDate != ''">AND i.joindate &gt;= #{map.startDate}</if>
+            <if test="map.endDate != null and map.endDate != ''">AND i.joindate &lt;= concat(#{map.endDate},' 23:59:59')
+            </if>
+        </where>
+
+        union all
+        select '黑名单' type,o.canceldate gmtCreate,o.canceldate,null joinContent,null joindate,o.cancelreason,
+        b.company,o.canceldate otime,b.cancel_user user
+        from ra_blacklist b
+        left join (select blacklist_id,GROUP_CONCAT(reason) cancelreason,MAX(gmt_create) canceldate from
+        ra_blacklist_reason where type in (3,4) group by blacklist_id) o on o.blacklist_id = b.id
+        <where>
+            <if test="map.user != null and map.user != ''">AND b.cancel_user=#{map.user}</if>
+            <if test="map.startDate != null and map.startDate != ''">AND o.canceldate &gt;= #{map.startDate}</if>
+            <if test="map.endDate != null and map.endDate != ''">AND o.canceldate &lt;= concat(#{map.endDate},'
+                23:59:59')
+            </if>
+        </where>
+
+        ) a
+        ORDER BY otime desc
+
+    </sql>
+
+
+    <select id="queryFocusPage" resultType="com.bbd.dafei.common.modal.vo.FeedbackVO">
+
+        <include refid="queryFocusSql"></include>
+
+    </select>
+
+
+    <sql id="queryFocusSql">
+
+        select '关注' type,f.gmt_create gmtCreate,if(f.status=1,f.gmt_update,null) canceldate,i.joinreason
+        joinContent,i.joindate,null cancelreason,f.company_name company,i.joindate otime,f.username user
+        from ra_my_focus f
+        left join (select focus_id,GROUP_CONCAT(reason) joinreason ,max(gmt_create) joindate from ra_focus_reason where
+        type in (1,2) group by focus_id) i on i.focus_id = f.id
+        <where>
+            <if test="map.user != null and map.user != ''">AND f.username = #{map.user}</if>
+            <if test="map.startDate != null and map.startDate != ''">AND i.joindate &gt;= #{map.startDate}</if>
+            <if test="map.endDate != null and map.endDate != ''">AND i.joindate &lt;= concat(#{map.endDate},' 23:59:59')
+            </if>
+        </where>
+        ORDER BY otime desc
+
+    </sql>
+
+
+    <select id="queryCompanyRemarkPage" resultType="com.bbd.dafei.common.modal.vo.FeedbackVO">
+        <include refid="queryCompanyRemarkSql"></include>
+    </select>
+
+
+    <sql id="queryCompanyRemarkSql">
+
+        SELECT '备注' type,
+        a.gmt_create gmtCreate,
+        null cancelDate,
+        remark joinContent,
+        a.gmt_create joindate,
+        null cancelReason,
+        b.company,
+        a.gmt_create otime,
+        username user
+        FROM ra_company_remark a
+        LEFT JOIN ra_company b
+        ON a.company_id=b.id
+        WHERE 1=1
+        <if test="map.user != null and map.user != ''">AND username = #{map.user}</if>
+        <if test="map.startDate != null and map.startDate != ''">AND a.gmt_create &gt;= #{map.startDate}</if>
+        <if test="map.endDate != null and map.endDate != ''">AND a.gmt_create &lt;= concat(#{map.endDate},' 23:59:59')
+        </if>
+        ORDER BY a.gmt_create desc
+
+    </sql>
+
+
+    <select id="queryCompanyUpdatePage" resultType="com.bbd.dafei.common.modal.vo.FeedbackVO">
+        <include refid="queryCompanyUpdateSql"></include>
+    </select>
+
+    <sql id="queryCompanyUpdateSql">
+        SELECT '企业信息更新' type,
+        a.gmt_create gmtCreate,
+        null cancelDate,
+        a.content joinContent,
+        a.gmt_create joindate,
+        null cancelReason,
+        a.company,
+        a.gmt_create otime,
+        a.username `user`
+        FROM ra_update a
+        WHERE 1=1
+        <if test="map.user != null and map.user != ''">AND a.username = #{map.user}</if>
+        <if test="map.startDate != null and map.startDate != ''">AND a.gmt_create &gt;= #{map.startDate}</if>
+        <if test="map.endDate != null and map.endDate != ''">AND a.gmt_create &lt;= concat(#{map.endDate},' 23:59:59')
+        </if>
+        ORDER BY a.gmt_create desc
+
+    </sql>
+
+    <select id="queryFeedbackPage" resultType="com.bbd.dafei.common.modal.vo.FeedbackVO">
+        <include refid="queryFeedbackSql"></include>
+    </select>
+
+
+    <sql id="queryFeedbackSql">
+        SELECT '平台信息反馈' type,
+        a.gmt_create gmtCreate,
+        null cancelDate,
+        a.feedback joinContent,
+        a.gmt_create joindate,
+        null cancelReason,
+        null company,
+        a.gmt_create otime,
+        a.username `user`
+        FROM ra_feedback a
+        WHERE 1=1
+        <if test="map.user != null and map.user != ''">AND a.username = #{map.user}</if>
+        <if test="map.startDate != null and map.startDate != ''">AND a.gmt_create &gt;= #{map.startDate}</if>
+        <if test="map.endDate != null and map.endDate != ''">AND a.gmt_create &lt;= concat(#{map.endDate},' 23:59:59')
+        </if>
+        ORDER BY a.gmt_create desc
+
+    </sql>
+
+
+</mapper>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaAreaChartMapper">
+    <select id="getNetAvgReturnRate" resultType="String">
+        select
+            net_avg_return_rate
+        from
+            ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getNetAvgLoanDate" resultType="String">
+        select
+        net_avg_loan_date
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getTradePlaceType" resultType="String">
+        select
+        trade_place_type
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getTradePlaceTradeType" resultType="String">
+        select
+        trade_place_trade_type
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getHighCompanySort" resultType="String">
+        select
+          IF(#{industry}='融资担保',financing_guarantee_high_risk_num,IF(#{industry} = '小额贷款',petty_loan_high_risk_num,other_high_risk_num)) as valueData
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getPrivateFundProductNum" resultType="String">
+        select
+        private_fund_product_num
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getPrivateFundProductType" resultType="String">
+        select
+        private_fund_product_type
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getPrivateFundCompanyType" resultType="String">
+        select
+        private_fund_company_type
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <select id="getPrivateFundEmployeeScale" resultType="String">
+        select
+        private_fund_employee_scale
+        from
+        ra_area_chart
+        <include refid="whereSql"></include>
+    </select>
+
+    <sql id="whereSql">
+        <where>
+            province = #{province}
+            <choose>
+                <when test="city != null and city != ''">
+                    AND city=#{city}
+                    <choose>
+                        <when test="area != null and area != ''">
+                            AND area=#{area}
+                            AND region_type = 3
+                        </when>
+                        <otherwise>
+                            AND region_type = 2
+                        </otherwise>
+                    </choose>
+                </when>
+                <otherwise>
+                    and region_type = 1
+                </otherwise>
+            </choose>
+
+        </where>
+    </sql>
+</mapper>

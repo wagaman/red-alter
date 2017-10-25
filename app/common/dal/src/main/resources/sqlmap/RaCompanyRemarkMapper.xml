@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaCompanyRemarkMapper" >
+
+    <resultMap id="raCompanyRemarkDTO" type="com.bbd.dafei.common.modal.dto.RaCompanyRemarkDTO"></resultMap>
+
+    <!-- 根据公司id、平台和用户名查询备注 -->
+    <select id="findRemarkByCompanyIdAndUserName" resultMap="raCompanyRemarkDTO">
+        select <include refid="columns"/>
+        from ra_company_remark where company_id = #{companyId} and username = #{userName}
+        <if test="platform != null">
+            and platform = #{platform}
+        </if>
+    </select>
+
+    <!-- 根据id查询备注 -->
+    <select id="findRemarkById" resultMap="raCompanyRemarkDTO">
+        select <include refid="columns"/>
+        from ra_company_remark where id = #{id}
+    </select>
+
+    <!-- 根据id删除备注 -->
+    <delete id="deleteRemarkById">
+        delete from ra_company_remark where id = #{id}
+    </delete>
+
+    <!-- 保存备注 -->
+    <insert id="insertRemark">
+        insert into ra_company_remark(company_id, platform, remark, username)
+        values (#{companyId}, #{platform,jdbcType=VARCHAR}, #{remark}, #{userName})
+    </insert>
+
+    <sql id="columns">
+        id, company_id companyid, platform, remark, username, gmt_create gmtcreate, gmt_update gmtupdate
+    </sql>
+
+</mapper>

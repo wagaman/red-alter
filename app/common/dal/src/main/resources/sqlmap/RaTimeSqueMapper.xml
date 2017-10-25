@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaTimeSqueMapper">
+
+    <select id="getTimeSqueInfo" resultType="com.bbd.dafei.common.modal.vo.RaTimeSqueVO" >
+        select val_type,time_sque
+        from ra_time_sque
+        WHERE industry = #{industry};
+    </select>
+
+</mapper>

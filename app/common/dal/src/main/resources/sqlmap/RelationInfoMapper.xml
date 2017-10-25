@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RelationInfoMapper" >
+
+    <select id="findRelationRightVO" resultType="com.bbd.dafei.common.modal.vo.RelationRightVO"  >
+        select <include refid="columns"/>
+        from relation_info where company_id=#{companyId} and dimension = #{degree}
+    </select>
+
+    <sql id="columns">
+        company_id,company_name,key_nature,key_no_nature,key_industry,key_location,
+        blacklist_num,high_danger_company_num,new_finance_company_num,benefit_cons_num,
+        same_location_company_num,revoke_company_num,dimension
+    </sql>
+
+</mapper>

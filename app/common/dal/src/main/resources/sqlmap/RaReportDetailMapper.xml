@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bbd.dafei.common.dal.mapper.RaReportDetailMapper">
+
+    <select id="save" parameterType="com.bbd.dafei.common.modal.dto.RaReportDetailDTO">
+        insert into ra_report_detail(user_id,company,company_id,report_url,report_download_time,report_make_time,report_status,gmt_create,gmt_update,remaining_number)
+        values (#{userId},#{company},#{companyId},#{reportUrl},#{reportDownloadTime},#{reportMakeTime},#{reportStatus},#{gmtCreate},#{gmtUpdate},#{remainingNumber});
+    </select>
+
+    <select id="getStatusByUserIdAndCompany" resultType="int">
+        select count(*)
+        from
+           ra_report_detail
+        where
+           user_id = #{userId} AND company= #{company} AND report_status = #{reportStatus};
+    </select>
+    <select id="getStatusByUserIdAndCompanyId" resultType="int">
+        select count(*)
+        from
+        ra_report_detail
+        where
+        user_id = #{userId} AND company_id= #{companyId} AND report_status = #{reportStatus};
+    </select>
+
+    <select id="findLastReportStatus" resultType="java.lang.String">
+        select report_status from ra_report_detail
+        where user_id = #{userId}
+        and company = #{companyId}
+        order by gmt_create desc LIMIT 0 ,1;
+    </select>
+    <!--<select id="findFileType" resultType="java.lang.String">-->
+        <!--select upload_file_type-->
+        <!--from ra_report_detail-->
+        <!--where user_id = #{userId} and company_id = #{companyId} and date_format(gmt_create,'%Y%m%d') = #{applyTime};-->
+    <!--</select>-->
+    <select id="findFileType" resultType="java.lang.String">
+        select upload_file_type
+        from ra_report_detail
+        where id = #{reportId};
+    </select>
+    <update id="updateDownTime">
+        update ra_report_detail
+        set report_status = #{newStatus},gmt_update =#{gmtUpdate},report_download_time=#{gmtUpdate}
+        where user_id = #{userId} and company_id = #{companyId} and date_format(gmt_create,'%Y%m%d') = #{applyTime};
+    </update>
+    <select id="findApplyTimeByUserIdAndCompany" resultType="java.lang.String">
+        select date_format(gmt_create,'%Y%m%d') as applyTime
+        from ra_report_detail
+        where user_id = #{userId} AND company = #{company} and report_status = #{reportStatus};
+    </select>
+    <update id="updateReportStatusByUserIdAndCompany">
+         update ra_report_detail
+         set report_status = #{newStatus},gmt_update = #{gmtUpdate},report_make_time = #{gmtUpdate},upload_file_type = #{fileType}
+         where user_id = #{userId} and company = #{company} and report_status = #{oldStatus};
+    </update>
+
+
+    <select id="count" resultType="int">
+        SELECT count(*) FROM ra_report_detail
+    </select>
+
+    <select id="query" resultType="com.bbd.dafei.common.modal.dto.RaReportDetailDTO">
+        SELECT a.* , b.username
+        FROM   ra_report_detail a
+        LEFT JOIN ra_user b
+                  ON b.id=a.user_id
+        ORDER BY a.gmt_create DESC
+        LIMIT ${page.start} , ${page.pageSize}
+    </select>
+
+
+    <update id="updateReportStatusById">
+
+        update ra_report_detail
+        set    report_url = #{reportUrl},
+               report_status = #{newStatus},
+               upload_file_type = #{fileType},
+               report_make_time = CURRENT_TIMESTAMP()
+        where  id = #{id}
+
+    </update>
+
+    <!--<select id="findReportUrl" resultType="java.lang.String">-->
+        <!--select report_url-->
+        <!--from ra_report_detail-->
+        <!--where user_id = #{userId} and company_id = #{companyId} and date_format(gmt_create,'%Y%m%d') = #{applyTime};-->
+    <!--</select>-->
+    <select id="findReportUrl" resultType="java.lang.String">
+        select report_url
+        from ra_report_detail
+        where id = #{reportId} ;
+    </select>
+
+</mapper>
