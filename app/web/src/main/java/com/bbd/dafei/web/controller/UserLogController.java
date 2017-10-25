@@ -56,7 +56,7 @@ public class UserLogController extends BaseController {
         userLogDTO.setOperation(operation);
         userLogDTO.setDetail(detail);
         //前端操作没有url，保存空字符串
-        userLogDTO.setUrl("");
+        userLogDTO.setUrl(" ");
         //线程池异步保存日志
         UserLogThreadPool.execute(() -> userLogService.saveUserLog(userLogDTO));
         return ResponseBean.successResponse(null, "调用记录日志成功");
